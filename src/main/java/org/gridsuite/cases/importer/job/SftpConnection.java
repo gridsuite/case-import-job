@@ -1,0 +1,85 @@
+/**
+ * Copyright (c) 2020, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+package org.gridsuite.cases.importer.job;
+
+import net.schmizz.sshj.SSHClient;
+import net.schmizz.sshj.connection.channel.direct.Session;
+import net.schmizz.sshj.sftp.RemoteResourceInfo;
+import net.schmizz.sshj.sftp.SFTPClient;
+import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
+import net.schmizz.sshj.xfer.InMemoryDestFile;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author Nicolas Noir <nicolas.noir at rte-france.com>
+ */
+public class SftpConnection {
+
+    public static SftpConnection sftpConnection = new SftpConnection();
+
+    private final SSHClient sshClient = new SSHClient();
+
+    private SFTPClient sftpClient = null;
+
+    private Session session = null;
+
+    public static SftpConnection getInstance()
+    {   return sftpConnection;
+    }
+
+    public void open() throws IOException
+    {
+        sshClient.addHostKeyVerifier(new PromiscuousVerifier());
+        sshClient.connect("localhost");
+        sshClient.authPassword(System.getenv("SECRET_USERNAME"), System.getenv("SECRET_PASSWORD"));
+        session = sshClient.startSession();
+        sftpClient = sshClient.newSFTPClient();
+    }
+
+    private static class AcquiredInMemoryDestFile  extends InMemoryDestFile {
+        public ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        @Override
+        public ByteArrayOutputStream getOutputStream() throws IOException {
+            return this.outputStream;
+        }
+    }
+
+    public List<Path> listFiles(Path acquisitionPath) throws IOException {
+        List<RemoteResourceInfo> files = sftpClient.ls(acquisitionPath.toString());
+        List<Path> filesToAcquire = new ArrayList<>();
+        for (RemoteResourceInfo info : files) {
+            filesToAcquire.add(Path.of(info.getPath()));
+        }
+        return filesToAcquire;
+    }
+
+    public TransferableFile getFile(String fileName) throws IOException {
+        AcquiredInMemoryDestFile acquiredFile = new AcquiredInMemoryDestFile();
+        sftpClient.get(fileName, acquiredFile);
+        return new TransferableFile(Path.of(fileName).getFileName().toString(), acquiredFile.getOutputStream().toByteArray());
+    }
+
+    public void close() throws IOException {
+
+        if (sftpClient != null) {
+            sftpClient.close();
+        }
+        if (session != null) {
+            session.close();
+        }
+
+        if (sshClient != null) {
+            sshClient.disconnect();
+        }
+    }
+}
