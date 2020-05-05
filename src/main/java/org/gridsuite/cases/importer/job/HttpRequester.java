@@ -24,7 +24,8 @@ import java.util.*;
 public class HttpRequester {
 
     private static final String API_VERSION = "v1";
-    private static final String IP_SERVICE = "localhost";
+
+    private static String serviceUrl;
 
     private static final HttpRequester httpRequester = new HttpRequester();
 
@@ -38,7 +39,11 @@ public class HttpRequester {
     {   return httpRequester;
     }
 
-    public void importCase(TransferableFile caseFile) throws IOException, InterruptedException {
+    public void init(String serviceUrl) {
+        this.serviceUrl = serviceUrl;
+    }
+
+    public boolean importCase(TransferableFile caseFile) throws IOException, InterruptedException {
         Map<Object, Object> data = new LinkedHashMap<>();
         data.put("file", caseFile);
 
@@ -46,7 +51,7 @@ public class HttpRequester {
         String boundary = new BigInteger(256, new Random()).toString();
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://" + IP_SERVICE + "/case-server/" + API_VERSION + "/cases/public"))
+                .uri(URI.create(serviceUrl + "/case-server/" + API_VERSION + "/cases/public"))
                 .timeout(Duration.ofMinutes(2))
                 .header("Content-Type", "multipart/form-data;boundary=" + boundary)
                 .POST(ofMimeMultipartData(data, boundary))
@@ -55,6 +60,7 @@ public class HttpRequester {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         System.out.println(response.statusCode());
         System.out.println(response.body());
+        return (response.statusCode() == 200);
     }
 
     private HttpRequest.BodyPublisher ofMimeMultipartData(Map<Object, Object> data,

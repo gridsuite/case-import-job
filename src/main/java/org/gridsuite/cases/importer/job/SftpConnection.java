@@ -36,11 +36,11 @@ public class SftpConnection {
     {   return sftpConnection;
     }
 
-    public void open() throws IOException
+    public void open(String hostname, String userName, String password) throws IOException
     {
         sshClient.addHostKeyVerifier(new PromiscuousVerifier());
-        sshClient.connect("localhost");
-        sshClient.authPassword(System.getenv("SECRET_USERNAME"), System.getenv("SECRET_PASSWORD"));
+        sshClient.connect(hostname);
+        sshClient.authPassword(userName, password);
         session = sshClient.startSession();
         sftpClient = sshClient.newSFTPClient();
     }
@@ -54,8 +54,8 @@ public class SftpConnection {
         }
     }
 
-    public List<Path> listFiles(Path acquisitionPath) throws IOException {
-        List<RemoteResourceInfo> files = sftpClient.ls(acquisitionPath.toString());
+    public List<Path> listFiles(String acquisitionPath) throws IOException {
+        List<RemoteResourceInfo> files = sftpClient.ls(acquisitionPath);
         List<Path> filesToAcquire = new ArrayList<>();
         for (RemoteResourceInfo info : files) {
             filesToAcquire.add(Path.of(info.getPath()));

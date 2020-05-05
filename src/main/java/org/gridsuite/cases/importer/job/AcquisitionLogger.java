@@ -31,8 +31,8 @@ public class AcquisitionLogger {
 
     private PreparedStatement psInsertAcquiredFile;
 
-    public void init() {
-        connector.connect("localhost", 9042);
+    public void init(String hostname, int port) {
+        connector.connect(hostname, port);
 
         psInsertAcquiredFile = connector.getSession().prepare(insertInto(KEYSPACE_ACQUISITION_LOGS, "files")
                 .value("filename", bindMarker())
@@ -60,7 +60,9 @@ public class AcquisitionLogger {
 
 
     public void close() {
-        connector.close();
+        if (connector != null) {
+            connector.close();
+        }
     }
 
 }

@@ -6,20 +6,50 @@
  */
 package org.gridsuite.cases.importer.job;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
 public class SftpAcquisitionJob {
 
-    final static Path acquisitionPath = Path.of("./cases");
-
     public static void main(String... args)
             throws IOException, InterruptedException {
+
+        // Loading properties
+        Properties cassandraProperties = new Properties();
+        try {
+            cassandraProperties.load(new FileInputStream("/conf/cassandra.properties"));
+        } catch (FileNotFoundException e){
+            cassandraProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("/cassandra.properties"));
+        }
+
+        Properties sftpProperties = new Properties();
+        try {
+            sftpProperties.load(new FileInputStream("/conf/sftp-server.properties"));
+        } catch (FileNotFoundException e){
+            sftpProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("/sftp-server.properties"));
+        }
+
+        Properties sftpCredentialsProperties = new Properties();
+        try {
+            sftpCredentialsProperties.load(new FileInputStream("/.conf/sftp-credentials.properties"));
+        } catch (FileNotFoundException e){
+            sftpCredentialsProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("/sftp-credentials.properties"));
+        }
+
+        Properties serviceProperties = new Properties();
+        try {
+            serviceProperties.load(new FileInputStream("/conf/case-import-service.properties"));
+        } catch (FileNotFoundException e){
+            serviceProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("/case-import-service.properties"));
+        }
 
         final SftpConnection sftpConnection = SftpConnection.getInstance();
         final HttpRequester httpRequester = HttpRequester.getInstance();
@@ -27,23 +57,31 @@ public class SftpAcquisitionJob {
 
 
         try {
-            sftpConnection.open();
-            acquisitionLogger.init();
+            sftpConnection.open(sftpProperties.getProperty("hostname"), sftpCredentialsProperties.getProperty("user.name"), sftpCredentialsProperties.getProperty("password"));
+            acquisitionLogger.init(cassandraProperties.getProperty("cassandra.contact-points"), Integer.parseInt(cassandraProperties.getProperty("cassandra.port")));
+            httpRequester.init(serviceProperties.getProperty("service.url"));
 
-            List<Path> filesToAcquire = sftpConnection.listFiles(acquisitionPath);
+            String casesDirectory = sftpProperties.get("cases.directory").toString();
+            List<Path> filesToAcquire = sftpConnection.listFiles(casesDirectory);
             for (Path file : filesToAcquire) {
                 TransferableFile acquiredFile = sftpConnection.getFile(file.toString());
-                if (!acquisitionLogger.isAcquiredFile(acquiredFile.getName(), "Origin")) {
+                if (!acquisitionLogger.isAcquiredFile(acquiredFile.getName(), sftpProperties.getProperty("label"))) {
                     System.out.println("Import of : \"" + file.toString() + "\"");
-                    httpRequester.importCase(acquiredFile);
-                    acquisitionLogger.logFileAcquired(acquiredFile.getName(), "Origin", new Date());
+                    boolean importOk = httpRequester.importCase(acquiredFile);
+                    if (importOk) {
+                        acquisitionLogger.logFileAcquired(acquiredFile.getName(), sftpProperties.getProperty("label"), new Date());
+                    }
                 } else {
                     System.out.println("File already imported : \"" + file.toString() + "\"");
                 }
             }
         } finally {
-            sftpConnection.close();
-            acquisitionLogger.close();
+            if (sftpConnection != null) {
+                sftpConnection.close();
+            }
+            if (acquisitionLogger != null) {
+                acquisitionLogger.close();
+            }
         }
     }
 }
