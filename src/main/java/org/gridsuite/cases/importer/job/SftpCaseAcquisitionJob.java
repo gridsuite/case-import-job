@@ -74,6 +74,8 @@ public class SftpCaseAcquisitionJob {
                     System.out.println("File already imported : \"" + file.toString() + "\"");
                 }
             }
+        } catch (Exception exc) {
+          System.out.println("Job execution error: " + exc.getMessage());
         } finally {
             if (sftpConnection != null) {
                 sftpConnection.close();

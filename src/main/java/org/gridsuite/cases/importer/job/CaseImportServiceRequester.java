@@ -49,7 +49,7 @@ public class CaseImportServiceRequester {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println(response.statusCode());
+        System.out.println("Case server response status: " + response.statusCode());
         System.out.println(response.body());
         return (response.statusCode() == 200);
     }
