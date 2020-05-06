@@ -17,7 +17,7 @@ import java.util.Properties;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class SftpAcquisitionJob {
+public class SftpCaseAcquisitionJob {
 
     public static void main(String... args)
             throws IOException, InterruptedException {
@@ -27,49 +27,48 @@ public class SftpAcquisitionJob {
         try {
             cassandraProperties.load(new FileInputStream("/conf/cassandra.properties"));
         } catch (FileNotFoundException e){
-            cassandraProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("/cassandra.properties"));
+            cassandraProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("cassandra.properties"));
         }
 
         Properties sftpProperties = new Properties();
         try {
             sftpProperties.load(new FileInputStream("/conf/sftp-server.properties"));
         } catch (FileNotFoundException e){
-            sftpProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("/sftp-server.properties"));
+            sftpProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("sftp-server.properties"));
         }
 
         Properties sftpCredentialsProperties = new Properties();
         try {
             sftpCredentialsProperties.load(new FileInputStream("/.conf/sftp-credentials.properties"));
         } catch (FileNotFoundException e){
-            sftpCredentialsProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("/sftp-credentials.properties"));
+            sftpCredentialsProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("sftp-credentials.properties"));
         }
 
         Properties serviceProperties = new Properties();
         try {
             serviceProperties.load(new FileInputStream("/conf/case-import-service.properties"));
         } catch (FileNotFoundException e){
-            serviceProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("/case-import-service.properties"));
+            serviceProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("case-import-service.properties"));
         }
 
-        final SftpConnection sftpConnection = SftpConnection.getInstance();
-        final HttpRequester httpRequester = HttpRequester.getInstance();
-        final AcquisitionLogger acquisitionLogger = AcquisitionLogger.getInstance();
+        final SftpConnection sftpConnection = new SftpConnection();
+        final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(serviceProperties.getProperty("service.url"));
+        final CaseImportLogger caseImportLogger = new CaseImportLogger();
 
 
         try {
             sftpConnection.open(sftpProperties.getProperty("hostname"), sftpCredentialsProperties.getProperty("user.name"), sftpCredentialsProperties.getProperty("password"));
-            acquisitionLogger.init(cassandraProperties.getProperty("cassandra.contact-points"), Integer.parseInt(cassandraProperties.getProperty("cassandra.port")));
-            httpRequester.init(serviceProperties.getProperty("service.url"));
+            caseImportLogger.connectDb(cassandraProperties.getProperty("cassandra.contact-points"), Integer.parseInt(cassandraProperties.getProperty("cassandra.port")));
 
             String casesDirectory = sftpProperties.get("cases.directory").toString();
             List<Path> filesToAcquire = sftpConnection.listFiles(casesDirectory);
             for (Path file : filesToAcquire) {
                 TransferableFile acquiredFile = sftpConnection.getFile(file.toString());
-                if (!acquisitionLogger.isAcquiredFile(acquiredFile.getName(), sftpProperties.getProperty("label"))) {
+                if (!caseImportLogger.isImportedFile(acquiredFile.getName(), sftpProperties.getProperty("label"))) {
                     System.out.println("Import of : \"" + file.toString() + "\"");
-                    boolean importOk = httpRequester.importCase(acquiredFile);
+                    boolean importOk = caseImportServiceRequester.importCase(acquiredFile);
                     if (importOk) {
-                        acquisitionLogger.logFileAcquired(acquiredFile.getName(), sftpProperties.getProperty("label"), new Date());
+                        caseImportLogger.logFileAcquired(acquiredFile.getName(), sftpProperties.getProperty("label"), new Date());
                     }
                 } else {
                     System.out.println("File already imported : \"" + file.toString() + "\"");
@@ -79,8 +78,8 @@ public class SftpAcquisitionJob {
             if (sftpConnection != null) {
                 sftpConnection.close();
             }
-            if (acquisitionLogger != null) {
-                acquisitionLogger.close();
+            if (caseImportLogger != null) {
+                caseImportLogger.close();
             }
         }
     }

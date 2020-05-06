@@ -64,7 +64,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>org.gridsuite.cases.importer.job.SftpAcquisitionJob</mainClass>
+                            <mainClass>org.gridsuite.cases.importer.job.SftpCaseAcquisitionJob</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

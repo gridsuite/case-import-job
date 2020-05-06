@@ -17,35 +17,29 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.*;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class AcquisitionLogger {
+public class CaseImportLogger {
 
     private final CassandraConnector connector = new CassandraConnector();
 
-    private static final String KEYSPACE_ACQUISITION_LOGS = "acquisition_logs";
+    private static final String KEYSPACE_IMPORT_HISTORY = "import_history";
 
-    public static final AcquisitionLogger acquitionLogger = new AcquisitionLogger();
+    private PreparedStatement psInsertImportedFile;
 
-    public static AcquisitionLogger getInstance() {
-        return acquitionLogger;
-    }
-
-    private PreparedStatement psInsertAcquiredFile;
-
-    public void init(String hostname, int port) {
+    public void connectDb(String hostname, int port) {
         connector.connect(hostname, port);
 
-        psInsertAcquiredFile = connector.getSession().prepare(insertInto(KEYSPACE_ACQUISITION_LOGS, "files")
+        psInsertImportedFile = connector.getSession().prepare(insertInto(KEYSPACE_IMPORT_HISTORY, "files")
                 .value("filename", bindMarker())
                 .value("origin", bindMarker())
-                .value("acq_date", bindMarker()));
+                .value("import_date", bindMarker()));
 
     }
 
-    public boolean isAcquiredFile(String filename, String origin) {
+    public boolean isImportedFile(String filename, String origin) {
         ResultSet resultSet = connector.getSession().execute(select("filename",
                 "origin",
-                "acq_date")
-                .from(KEYSPACE_ACQUISITION_LOGS, "files")
+                "import_date")
+                .from(KEYSPACE_IMPORT_HISTORY, "files")
                 .where(eq("filename", filename)).and(eq("origin", origin)));
         Row one = resultSet.one();
         if (one != null) {
@@ -55,7 +49,7 @@ public class AcquisitionLogger {
     }
 
     public void logFileAcquired(String fileName, String origin, Date date) {
-        connector.getSession().execute(psInsertAcquiredFile.bind(fileName, origin, date));
+        connector.getSession().execute(psInsertImportedFile.bind(fileName, origin, date));
     }
 
 

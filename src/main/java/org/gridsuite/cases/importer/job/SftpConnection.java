@@ -24,17 +24,11 @@ import java.util.List;
  */
 public class SftpConnection {
 
-    public static SftpConnection sftpConnection = new SftpConnection();
-
     private final SSHClient sshClient = new SSHClient();
 
     private SFTPClient sftpClient = null;
 
     private Session session = null;
-
-    public static SftpConnection getInstance()
-    {   return sftpConnection;
-    }
 
     public void open(String hostname, String userName, String password) throws IOException
     {

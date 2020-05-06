@@ -21,26 +21,17 @@ import java.util.*;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class HttpRequester {
+public class CaseImportServiceRequester {
 
     private static final String API_VERSION = "v1";
 
     private static String serviceUrl;
 
-    private static final HttpRequester httpRequester = new HttpRequester();
-
     private final HttpClient httpClient;
 
-    public HttpRequester() {
-        httpClient = HttpClient.newHttpClient();
-    }
-
-    public static HttpRequester getInstance()
-    {   return httpRequester;
-    }
-
-    public void init(String serviceUrl) {
+    public CaseImportServiceRequester(String serviceUrl) {
         this.serviceUrl = serviceUrl;
+        httpClient = HttpClient.newHttpClient();
     }
 
     public boolean importCase(TransferableFile caseFile) throws IOException, InterruptedException {
