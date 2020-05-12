@@ -52,7 +52,8 @@ public class SftpConnection {
         List<RemoteResourceInfo> files = sftpClient.ls(acquisitionPath);
         List<Path> filesToAcquire = new ArrayList<>();
         for (RemoteResourceInfo info : files) {
-            filesToAcquire.add(Path.of(info.getPath()));
+            if (info.isRegularFile())
+                filesToAcquire.add(Path.of(info.getPath()));
         }
         return filesToAcquire;
     }
