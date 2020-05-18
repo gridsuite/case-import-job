@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class SftpConnection {
+public class SftpConnection implements AutoCloseable {
 
     private final SSHClient sshClient = new SSHClient();
 

@@ -51,12 +51,11 @@ public class SftpCaseAcquisitionJob {
             serviceProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("case-import-service.properties"));
         }
 
-        final SftpConnection sftpConnection = new SftpConnection();
         final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(serviceProperties.getProperty("service.url"));
-        final CaseImportLogger caseImportLogger = new CaseImportLogger();
 
+        try (SftpConnection sftpConnection = new SftpConnection();
+             CaseImportLogger caseImportLogger = new CaseImportLogger()) {
 
-        try {
             sftpConnection.open(sftpProperties.getProperty("hostname"), sftpCredentialsProperties.getProperty("user.name"), sftpCredentialsProperties.getProperty("password"));
             caseImportLogger.connectDb(cassandraProperties.getProperty("cassandra.contact-points"), Integer.parseInt(cassandraProperties.getProperty("cassandra.port")));
 
@@ -76,13 +75,6 @@ public class SftpCaseAcquisitionJob {
             }
         } catch (Exception exc) {
           System.out.println("Job execution error: " + exc.getMessage());
-        } finally {
-            if (sftpConnection != null) {
-                sftpConnection.close();
-            }
-            if (caseImportLogger != null) {
-                caseImportLogger.close();
-            }
         }
     }
 }

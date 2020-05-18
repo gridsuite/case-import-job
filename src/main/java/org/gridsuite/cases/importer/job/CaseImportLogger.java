@@ -17,7 +17,7 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.*;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class CaseImportLogger {
+public class CaseImportLogger implements AutoCloseable {
 
     private final CassandraConnector connector = new CassandraConnector();
 
@@ -42,10 +42,7 @@ public class CaseImportLogger {
                 .from(KEYSPACE_IMPORT_HISTORY, "files")
                 .where(eq("filename", filename)).and(eq("origin", origin)));
         Row one = resultSet.one();
-        if (one != null) {
-            return true;
-        }
-        return false;
+        return (one != null);
     }
 
     public void logFileAcquired(String fileName, String origin, Date date) {

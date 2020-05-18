@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2020, RTE (http://www.rte-france.com)
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -15,7 +23,7 @@
 
     <scm>
         <connection>scm:git:https://github.com/gridsuite/case-import-job .git</connection>
-        <developerConnection>scm:git:https://github.com/gridsuite/case-import-job .git</developerConnection>
+        <developerConnection>scm:git:https://github.com/gridsuite/case-import-job.git</developerConnection>
         <url>https://github.com/gridsuite/case-import-job </url>
     </scm>
 
@@ -33,23 +41,20 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.jib.version>2.1.0</maven.jib.version>
+        <sshj.version>0.27.0</sshj.version>
+        <cassandra.driver.version>3.2.0</cassandra.driver.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.hierynomus</groupId>
             <artifactId>sshj</artifactId>
-            <version>0.27.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5.12</version>
+            <version>${sshj.version}</version>
         </dependency>
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
-            <version>3.2.0</version>
+            <version>${cassandra.driver.version}</version>
         </dependency>
     </dependencies>
 
