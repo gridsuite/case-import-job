@@ -6,75 +6,58 @@
  */
 package org.gridsuite.cases.importer.job;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
 public final class SftpCaseAcquisitionJob {
 
-    private SftpCaseAcquisitionJob() {
-    }
+    private static final String CONFIG_FILE_NAME =  "case-import-job-configuration.yaml";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SftpCaseAcquisitionJob.class);
 
+    private SftpCaseAcquisitionJob() {
+    }
+
     public static void main(String... args)
-            throws IOException, InterruptedException {
+            throws IOException, URISyntaxException {
 
-        // Loading properties
-        Properties cassandraProperties = new Properties();
-        try {
-            cassandraProperties.load(new FileInputStream("/conf/cassandra.properties"));
-        } catch (FileNotFoundException e) {
-            cassandraProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("cassandra.properties"));
+        Path configFilePath = Path.of("/config", CONFIG_FILE_NAME);
+        if (!Files.exists(configFilePath)) {
+            URL url = Thread.currentThread().getContextClassLoader().getResource(CONFIG_FILE_NAME);
+            configFilePath = Paths.get(url.toURI());
         }
 
-        Properties sftpProperties = new Properties();
-        try {
-            sftpProperties.load(new FileInputStream("/conf/sftp-server.properties"));
-        } catch (FileNotFoundException e) {
-            sftpProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("sftp-server.properties"));
-        }
+        CaseImportJobConfiguration jobConfiguration = CaseImportJobConfiguration.parseFile(configFilePath);
 
-        Properties sftpCredentialsProperties = new Properties();
-        try {
-            sftpCredentialsProperties.load(new FileInputStream("/.conf/sftp-credentials.properties"));
-        } catch (FileNotFoundException e) {
-            sftpCredentialsProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("sftp-credentials.properties"));
-        }
-
-        Properties serviceProperties = new Properties();
-        try {
-            serviceProperties.load(new FileInputStream("/conf/case-import-service.properties"));
-        } catch (FileNotFoundException e) {
-            serviceProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("case-import-service.properties"));
-        }
-
-        final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(serviceProperties.getProperty("service.url"));
+        final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(jobConfiguration.caseServerConfig.url);
 
         try (SftpConnection sftpConnection = new SftpConnection();
              CaseImportLogger caseImportLogger = new CaseImportLogger()) {
 
-            sftpConnection.open(sftpProperties.getProperty("hostname"), sftpCredentialsProperties.getProperty("user.name"), sftpCredentialsProperties.getProperty("password"));
-            caseImportLogger.connectDb(cassandraProperties.getProperty("cassandra.contact-points"), Integer.parseInt(cassandraProperties.getProperty("cassandra.port")));
+            sftpConnection.open(jobConfiguration.sftpServerConfig.hostname, jobConfiguration.sftpServerConfig.username, jobConfiguration.sftpServerConfig.password);
+            caseImportLogger.connectDb(jobConfiguration.cassandraConfig.contactPoints, Integer.parseInt(jobConfiguration.cassandraConfig.port));
 
-            String casesDirectory = sftpProperties.get("cases.directory").toString();
+            String casesDirectory = jobConfiguration.sftpServerConfig.casesDirectory;
             List<Path> filesToAcquire = sftpConnection.listFiles(casesDirectory);
             for (Path file : filesToAcquire) {
                 TransferableFile acquiredFile = sftpConnection.getFile(file.toString());
-                if (!caseImportLogger.isImportedFile(acquiredFile.getName(), sftpProperties.getProperty("label"))) {
+                if (!caseImportLogger.isImportedFile(acquiredFile.getName(), jobConfiguration.sftpServerConfig.label)) {
                     LOGGER.info("Import of : \"" + file.toString() + "\"");
                     boolean importOk = caseImportServiceRequester.importCase(acquiredFile);
                     if (importOk) {
-                        caseImportLogger.logFileAcquired(acquiredFile.getName(), sftpProperties.getProperty("label"), new Date());
+                        caseImportLogger.logFileAcquired(acquiredFile.getName(), jobConfiguration.sftpServerConfig.label, new Date());
                     }
                 } else {
                     LOGGER.info("File already imported : \"" + file.toString() + "\"");
