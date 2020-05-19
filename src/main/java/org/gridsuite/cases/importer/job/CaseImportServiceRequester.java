@@ -56,7 +56,7 @@ public class CaseImportServiceRequester {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         LOGGER.info("Case server response status: " + response.statusCode());
         LOGGER.info(response.body());
-        return (response.statusCode() == 200);
+        return response.statusCode() == 200;
     }
 
     private HttpRequest.BodyPublisher ofMimeMultipartData(Map<Object, Object> data,

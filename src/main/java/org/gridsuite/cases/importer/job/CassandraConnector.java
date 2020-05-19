@@ -13,26 +13,22 @@ import com.datastax.driver.core.Session;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class CassandraConnector
-{
+public class CassandraConnector {
     private Cluster cluster;
 
     private Session session;
 
-    public void connect(final String node, final int port)
-    {
+    public void connect(final String node, final int port) {
         this.cluster = Cluster.builder().addContactPoint(node).withPort(port).build();
         final Metadata metadata = cluster.getMetadata();
         session = cluster.connect();
     }
 
-    public Session getSession()
-    {
+    public Session getSession() {
         return this.session;
     }
 
-    public void close()
-    {
+    public void close() {
         cluster.close();
     }
 }

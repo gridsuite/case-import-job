@@ -30,8 +30,7 @@ public class SftpConnection implements AutoCloseable {
 
     private Session session = null;
 
-    public void open(String hostname, String userName, String password) throws IOException
-    {
+    public void open(String hostname, String userName, String password) throws IOException {
         sshClient.addHostKeyVerifier(new PromiscuousVerifier());
         sshClient.connect(hostname);
         sshClient.authPassword(userName, password);
@@ -52,8 +51,9 @@ public class SftpConnection implements AutoCloseable {
         List<RemoteResourceInfo> files = sftpClient.ls(acquisitionPath);
         List<Path> filesToAcquire = new ArrayList<>();
         for (RemoteResourceInfo info : files) {
-            if (info.isRegularFile())
+            if (info.isRegularFile()) {
                 filesToAcquire.add(Path.of(info.getPath()));
+            }
         }
         return filesToAcquire;
     }

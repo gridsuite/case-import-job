@@ -42,13 +42,12 @@ public class CaseImportLogger implements AutoCloseable {
                 .from(KEYSPACE_IMPORT_HISTORY, "files")
                 .where(eq("filename", filename)).and(eq("origin", origin)));
         Row one = resultSet.one();
-        return (one != null);
+        return one != null;
     }
 
     public void logFileAcquired(String fileName, String origin, Date date) {
         connector.getSession().execute(psInsertImportedFile.bind(fileName, origin, date));
     }
-
 
     public void close() {
         if (connector != null) {

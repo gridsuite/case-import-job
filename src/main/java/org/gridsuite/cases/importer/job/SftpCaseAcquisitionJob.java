@@ -19,7 +19,10 @@ import org.slf4j.LoggerFactory;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class SftpCaseAcquisitionJob {
+public final class SftpCaseAcquisitionJob {
+
+    private SftpCaseAcquisitionJob() {
+    }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SftpCaseAcquisitionJob.class);
 
@@ -30,28 +33,28 @@ public class SftpCaseAcquisitionJob {
         Properties cassandraProperties = new Properties();
         try {
             cassandraProperties.load(new FileInputStream("/conf/cassandra.properties"));
-        } catch (FileNotFoundException e){
+        } catch (FileNotFoundException e) {
             cassandraProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("cassandra.properties"));
         }
 
         Properties sftpProperties = new Properties();
         try {
             sftpProperties.load(new FileInputStream("/conf/sftp-server.properties"));
-        } catch (FileNotFoundException e){
+        } catch (FileNotFoundException e) {
             sftpProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("sftp-server.properties"));
         }
 
         Properties sftpCredentialsProperties = new Properties();
         try {
             sftpCredentialsProperties.load(new FileInputStream("/.conf/sftp-credentials.properties"));
-        } catch (FileNotFoundException e){
+        } catch (FileNotFoundException e) {
             sftpCredentialsProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("sftp-credentials.properties"));
         }
 
         Properties serviceProperties = new Properties();
         try {
             serviceProperties.load(new FileInputStream("/conf/case-import-service.properties"));
-        } catch (FileNotFoundException e){
+        } catch (FileNotFoundException e) {
             serviceProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("case-import-service.properties"));
         }
 
@@ -78,7 +81,7 @@ public class SftpCaseAcquisitionJob {
                 }
             }
         } catch (Exception exc) {
-          LOGGER.error("Job execution error: " + exc.getMessage());
+            LOGGER.error("Job execution error: " + exc.getMessage());
         }
     }
 }
