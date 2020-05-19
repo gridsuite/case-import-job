@@ -13,11 +13,15 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
 public class SftpCaseAcquisitionJob {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SftpCaseAcquisitionJob.class);
 
     public static void main(String... args)
             throws IOException, InterruptedException {
@@ -64,17 +68,17 @@ public class SftpCaseAcquisitionJob {
             for (Path file : filesToAcquire) {
                 TransferableFile acquiredFile = sftpConnection.getFile(file.toString());
                 if (!caseImportLogger.isImportedFile(acquiredFile.getName(), sftpProperties.getProperty("label"))) {
-                    System.out.println("Import of : \"" + file.toString() + "\"");
+                    LOGGER.info("Import of : \"" + file.toString() + "\"");
                     boolean importOk = caseImportServiceRequester.importCase(acquiredFile);
                     if (importOk) {
                         caseImportLogger.logFileAcquired(acquiredFile.getName(), sftpProperties.getProperty("label"), new Date());
                     }
                 } else {
-                    System.out.println("File already imported : \"" + file.toString() + "\"");
+                    LOGGER.info("File already imported : \"" + file.toString() + "\"");
                 }
             }
         } catch (Exception exc) {
-          System.out.println("Job execution error: " + exc.getMessage());
+          LOGGER.error("Job execution error: " + exc.getMessage());
         }
     }
 }

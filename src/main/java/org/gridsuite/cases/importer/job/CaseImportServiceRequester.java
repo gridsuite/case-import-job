@@ -6,6 +6,9 @@
  */
 package org.gridsuite.cases.importer.job;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
@@ -22,6 +25,8 @@ import java.util.*;
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
 public class CaseImportServiceRequester {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CaseImportServiceRequester.class);
 
     private static final String API_VERSION = "v1";
 
@@ -49,8 +54,8 @@ public class CaseImportServiceRequester {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("Case server response status: " + response.statusCode());
-        System.out.println(response.body());
+        LOGGER.info("Case server response status: " + response.statusCode());
+        LOGGER.info(response.body());
         return (response.statusCode() == 200);
     }
 
