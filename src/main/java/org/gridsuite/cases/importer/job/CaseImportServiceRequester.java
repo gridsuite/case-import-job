@@ -30,7 +30,7 @@ public class CaseImportServiceRequester {
 
     private static final String API_VERSION = "v1";
 
-    private static String serviceUrl;
+    private final String serviceUrl;
 
     private final HttpClient httpClient;
 
@@ -54,8 +54,8 @@ public class CaseImportServiceRequester {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        LOGGER.info("Case server response status: " + response.statusCode());
-        LOGGER.info(response.body());
+        LOGGER.info("Case server response status: {}", response.statusCode());
+        LOGGER.info("Http request response body: {}", response.body());
         return response.statusCode() == 200;
     }
 

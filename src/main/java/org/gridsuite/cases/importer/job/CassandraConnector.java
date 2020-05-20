@@ -7,7 +7,6 @@
 package org.gridsuite.cases.importer.job;
 
 import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Metadata;
 import com.datastax.driver.core.Session;
 
 /**
@@ -20,7 +19,6 @@ public class CassandraConnector {
 
     public void connect(final String node, final int port) {
         this.cluster = Cluster.builder().addContactPoint(node).withPort(port).build();
-        final Metadata metadata = cluster.getMetadata();
         session = cluster.connect();
     }
 

@@ -50,17 +50,17 @@ public final class SftpCaseAcquisitionJob {
             for (Path file : filesToAcquire) {
                 TransferableFile acquiredFile = sftpConnection.getFile(file.toString());
                 if (!caseImportLogger.isImportedFile(acquiredFile.getName(), sftpServerLabel)) {
-                    LOGGER.info("Import of : \"" + file.toString() + "\"");
+                    LOGGER.info("Import of : {}", file);
                     boolean importOk = caseImportServiceRequester.importCase(acquiredFile);
                     if (importOk) {
                         caseImportLogger.logFileAcquired(acquiredFile.getName(), sftpServerLabel, new Date());
                     }
                 } else {
-                    LOGGER.info("File already imported : \"" + file.toString() + "\"");
+                    LOGGER.info("File already imported : {}", file);
                 }
             }
         } catch (Exception exc) {
-            LOGGER.error("Job execution error: " + exc.getMessage());
+            LOGGER.error("Job execution error: {}", exc.getMessage());
         }
     }
 }

@@ -39,7 +39,7 @@ public class SftpConnection implements AutoCloseable {
     }
 
     private static class AcquiredInMemoryDestFile  extends InMemoryDestFile {
-        public ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
         @Override
         public ByteArrayOutputStream getOutputStream() throws IOException {
@@ -73,8 +73,6 @@ public class SftpConnection implements AutoCloseable {
             session.close();
         }
 
-        if (sshClient != null) {
-            sshClient.disconnect();
-        }
+        sshClient.disconnect();
     }
 }

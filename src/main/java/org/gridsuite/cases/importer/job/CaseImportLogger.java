@@ -23,24 +23,30 @@ public class CaseImportLogger implements AutoCloseable {
 
     private static final String KEYSPACE_IMPORT_HISTORY = "import_history";
 
+    private static final String FILES_TABLE = "files";
+
+    private static final String FILENAME_COLUMN = "filename";
+    private static final String ORIGIN_COLUMN = "origin";
+    private static final String IMPORT_DATE_COLUMN = "import_date";
+
     private PreparedStatement psInsertImportedFile;
 
     public void connectDb(String hostname, int port) {
         connector.connect(hostname, port);
 
-        psInsertImportedFile = connector.getSession().prepare(insertInto(KEYSPACE_IMPORT_HISTORY, "files")
-                .value("filename", bindMarker())
-                .value("origin", bindMarker())
-                .value("import_date", bindMarker()));
+        psInsertImportedFile = connector.getSession().prepare(insertInto(KEYSPACE_IMPORT_HISTORY, FILES_TABLE)
+                .value(FILENAME_COLUMN, bindMarker())
+                .value(ORIGIN_COLUMN, bindMarker())
+                .value(IMPORT_DATE_COLUMN, bindMarker()));
 
     }
 
     public boolean isImportedFile(String filename, String origin) {
-        ResultSet resultSet = connector.getSession().execute(select("filename",
-                "origin",
-                "import_date")
-                .from(KEYSPACE_IMPORT_HISTORY, "files")
-                .where(eq("filename", filename)).and(eq("origin", origin)));
+        ResultSet resultSet = connector.getSession().execute(select(FILENAME_COLUMN,
+                ORIGIN_COLUMN,
+                IMPORT_DATE_COLUMN)
+                .from(KEYSPACE_IMPORT_HISTORY, FILES_TABLE)
+                .where(eq(FILENAME_COLUMN, filename)).and(eq(ORIGIN_COLUMN, origin)));
         Row one = resultSet.one();
         return one != null;
     }
@@ -50,9 +56,7 @@ public class CaseImportLogger implements AutoCloseable {
     }
 
     public void close() {
-        if (connector != null) {
-            connector.close();
-        }
+        connector.close();
     }
 
 }
