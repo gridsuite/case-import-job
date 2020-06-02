@@ -51,6 +51,8 @@
         <cassandra.driver.version>3.2.0</cassandra.driver.version>
         <powsyblcore.version>3.1.0</powsyblcore.version>
         <jackson.version>2.10.3</jackson.version>
+        <embedded-cassandra.version>3.0.3</embedded-cassandra.version>
+        <junit.version>4.13</junit.version>
     </properties>
 
     <dependencies>
@@ -84,6 +86,18 @@
             <artifactId>powsybl-config-classic</artifactId>
             <version>${powsyblcore.version}</version>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.nosan</groupId>
+            <artifactId>embedded-cassandra-junit4-test</artifactId>
+            <version>${embedded-cassandra.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
