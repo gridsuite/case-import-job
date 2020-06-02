@@ -6,15 +6,11 @@
  */
 package org.gridsuite.cases.importer.job;
 
-import com.github.nosan.embedded.cassandra.api.Cassandra;
-import com.github.nosan.embedded.cassandra.api.connection.CassandraConnection;
 import com.github.nosan.embedded.cassandra.api.cql.CqlDataSet;
 import com.github.nosan.embedded.cassandra.junit4.test.CassandraRule;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.Date;
 
 import static org.junit.Assert.assertFalse;
@@ -25,17 +21,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class SftpCaseAcquisitionJobTest {
 
-    private CassandraRule cassandraRule = null;
-
-    @Before
-    public void setup() throws UnknownHostException {
-        cassandraRule = new CassandraRule()
-            .withCassandraFactory(EmbeddedCassandraFactoryConfig.embeddedCassandraFactory());
-        Cassandra cassandra = cassandraRule.getCassandra();
-        cassandra.start();
-        CassandraConnection cassConnection = cassandraRule.getCassandraConnection();
-        CqlDataSet.ofClasspaths("create_keyspace.cql", "import_history.cql").forEachStatement(cassConnection::execute);
-    }
+    @ClassRule
+    public static final CassandraRule CASSANDRA_RULE = new CassandraRule().withCassandraFactory(EmbeddedCassandraFactoryConfig.embeddedCassandraFactory())
+                                                                          .withCqlDataSet(CqlDataSet.ofClasspaths("create_keyspace.cql", "import_history.cql"));
 
     @Test
     public void historyLoggerTest() {
@@ -45,15 +33,6 @@ public class SftpCaseAcquisitionJobTest {
         assertFalse(caseImportLogger.isImportedFile("testFile.iidm", "testOrigin"));
         caseImportLogger.logFileAcquired("testFile.iidm", "testOrigin", importDate);
         assertTrue(caseImportLogger.isImportedFile("testFile.iidm", "testOrigin"));
-    }
-
-    @After
-    public void tearDown() {
-        if (cassandraRule != null) {
-            cassandraRule.getCassandraConnection().close();
-            cassandraRule.getCassandra().stop();
-        }
-
     }
 
 }

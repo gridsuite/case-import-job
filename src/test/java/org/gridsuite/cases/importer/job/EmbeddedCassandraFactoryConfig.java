@@ -23,7 +23,7 @@ public final class EmbeddedCassandraFactoryConfig {
     private EmbeddedCassandraFactoryConfig() {
     }
 
-    static CassandraFactory embeddedCassandraFactory() throws UnknownHostException {
+    static CassandraFactory embeddedCassandraFactory() {
         EmbeddedCassandraFactory cassandraFactory = new EmbeddedCassandraFactory();
         RemoteArtifact artifact = new RemoteArtifact(Version.of("4.0-alpha4"));
         String proxyHost = System.getProperty("https.proxyHost", System.getProperty("http.proxyHost", System.getProperty("proxyHost")));
@@ -59,7 +59,11 @@ public final class EmbeddedCassandraFactoryConfig {
         cassandraFactory.setJmxLocalPort(0);
         cassandraFactory.setRpcPort(0);
         cassandraFactory.setStoragePort(16432);
-        cassandraFactory.setAddress(InetAddress.getByName("localhost"));
+        try {
+            cassandraFactory.setAddress(InetAddress.getByName("localhost"));
+        } catch (UnknownHostException e) {
+            cassandraFactory.setAddress(null);
+        }
         cassandraFactory.setTimeout(Duration.ofSeconds(180)); //default is 90, we are getting timeouts on GH actions
         return cassandraFactory;
     }
