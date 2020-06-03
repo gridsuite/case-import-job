@@ -64,7 +64,7 @@ public final class EmbeddedCassandraFactoryConfig {
         } catch (UnknownHostException e) {
             cassandraFactory.setAddress(null);
         }
-        cassandraFactory.setTimeout(Duration.ofSeconds(180)); //default is 90, we are getting timeouts on GH actions
+        cassandraFactory.setTimeout(Duration.ofSeconds(900)); //default is 90, we are getting timeouts on GH actions
         return cassandraFactory;
     }
 }
