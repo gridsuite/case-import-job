@@ -47,6 +47,7 @@
         <java.version>11</java.version>
         <maven.jib.version>2.1.0</maven.jib.version>
         <slf4j.version>1.7.30</slf4j.version>
+        <logback.version>1.2.3</logback.version>
         <sshj.version>0.27.0</sshj.version>
         <cassandra.driver.version>3.2.0</cassandra.driver.version>
         <powsyblcore.version>3.1.0</powsyblcore.version>
@@ -62,9 +63,9 @@
             <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <version>${slf4j.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
         </dependency>
         <dependency>
             <groupId>com.hierynomus</groupId>
@@ -87,6 +88,8 @@
             <version>${powsyblcore.version}</version>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- Test dependencies -->
         <dependency>
             <groupId>com.github.nosan</groupId>
             <artifactId>embedded-cassandra-junit4-test</artifactId>
