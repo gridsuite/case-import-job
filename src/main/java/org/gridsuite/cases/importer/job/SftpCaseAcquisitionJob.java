@@ -39,6 +39,7 @@ public final class SftpCaseAcquisitionJob {
              CaseImportLogger caseImportLogger = new CaseImportLogger()) {
 
             sftpConnection.open(moduleConfigSftpServer.getStringProperty("hostname"),
+                                moduleConfigSftpServer.getIntProperty("port", 22),
                                 moduleConfigSftpServer.getStringProperty("username"),
                                 moduleConfigSftpServer.getStringProperty("password"));
 

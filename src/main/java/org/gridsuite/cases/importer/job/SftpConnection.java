@@ -30,9 +30,9 @@ public class SftpConnection implements AutoCloseable {
 
     private Session session = null;
 
-    public void open(String hostname, String userName, String password) throws IOException {
+    public void open(String hostname, int port, String userName, String password) throws IOException {
         sshClient.addHostKeyVerifier(new PromiscuousVerifier());
-        sshClient.connect(hostname);
+        sshClient.connect(hostname, port);
         sshClient.authPassword(userName, password);
         session = sshClient.startSession();
         sftpClient = sshClient.newSFTPClient();
