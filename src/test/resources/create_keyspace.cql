@@ -1,0 +1,1 @@
+CREATE KEYSPACE "import_history" WITH REPLICATION = {'class':'SimpleStrategy', 'replication_factor':1};
