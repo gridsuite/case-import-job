@@ -21,11 +21,3 @@ echo "Case date = $caseDate"
 xsltproc --stringparam dateReplacement "$caseDate" changedate.xsl ~/opde/$uniqueFileName > ~/opde/"$uniqueFileName.tmp"
 rm ~/opde/$uniqueFileName
 mv ~/opde/"$uniqueFileName.tmp" ~/opde/$uniqueFileName
-
-
-
-
-
-
-
-
