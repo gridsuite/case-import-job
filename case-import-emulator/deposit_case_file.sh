@@ -4,7 +4,7 @@ echo "Import new case"
 importDate=$(date +"%Y%m%d_%H%M")
 echo "Import date = $importDate"
 
-fileName=$(basename -- "cases/LF.xml")
+fileName=$(basename -- "cases/example.xml")
 fileName="${fileName%.*}"
 echo "Filename = $fileName"
 
