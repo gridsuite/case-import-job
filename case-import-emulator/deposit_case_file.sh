@@ -12,19 +12,23 @@ fileName="${fileName%.*}"
 uniqueFileName="${importDate}_SN5_D80.xml"
 echo "[INFO] File is deposit as: $uniqueFileName"
 
-cp cases/$fileToImport ~/opde/$uniqueFileName
-
-caseDate=$(date +"%Y-%m-%dT%T.000+01:00")
+cp cases/$fileToImport cases/$uniqueFileName
 
 #Change the case date to the current date
-xsltproc --stringparam dateReplacement "$caseDate" changedate.xsl ~/opde/$uniqueFileName > ~/opde/"$uniqueFileName.tmp"
-rm ~/opde/$uniqueFileName
-mv ~/opde/"$uniqueFileName.tmp" ~/opde/$uniqueFileName
+caseDate=$(date +"%Y-%m-%dT%T.000+01:00")
+xsltproc --stringparam dateReplacement "$caseDate" changedate.xsl cases/$uniqueFileName > cases/"$uniqueFileName.tmp"
+rm cases/$uniqueFileName
+mv cases/"$uniqueFileName.tmp" ~/opde/$uniqueFileName
+
 echo "[INFO] $uniqueFileName deposit in ~/opde"
 echo "==End deposit new case file=="
-
+printf "\n"
 echo "==End remove old files=="
 cd ~/opde
-ls -tp | grep -v '/$' | tail -n +101 | xargs -d '\n' -r rm --
+if [ $? -eq 0 ]; then
+    ls -tp ~/opde | grep -v '/$' | tail -n +101 | xargs -d '\n' -r rm --
+else
+    echo "~/opde : Aucun fichier ou dossier de ce type"
+fi
 echo "==Remove old files=="
 
