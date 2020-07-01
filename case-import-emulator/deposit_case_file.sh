@@ -1,4 +1,7 @@
 #!/bin/bash
+current_dir=$(dirname $(readlink -f $0))
+cd $current_dir
+
 echo "==Deposit new case file=="
 
 importDate=$(date +"%Y%m%d_%H%M")
@@ -23,12 +26,11 @@ mv cases/"$uniqueFileName.tmp" ~/opde/$uniqueFileName
 echo "[INFO] $uniqueFileName deposit in ~/opde"
 echo "==End deposit new case file=="
 printf "\n"
-echo "==End remove old files=="
+echo "==Remove old files=="
 cd ~/opde	
 if [ $? -eq 0 ]; then
     ls -tp | grep -v '/$' | tail -n +101 | xargs -d '\n' -r rm --
 else
 	echo $?
 fi
-echo "==Remove old files=="
-
+echo "==End remove old files=="
