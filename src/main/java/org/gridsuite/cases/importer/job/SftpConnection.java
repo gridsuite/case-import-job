@@ -12,6 +12,8 @@ import net.schmizz.sshj.sftp.RemoteResourceInfo;
 import net.schmizz.sshj.sftp.SFTPClient;
 import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import net.schmizz.sshj.xfer.InMemoryDestFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,6 +26,8 @@ import java.util.List;
  */
 public class SftpConnection implements AutoCloseable {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SftpCaseAcquisitionJob.class);
+
     private final SSHClient sshClient = new SSHClient();
 
     private SFTPClient sftpClient = null;
@@ -31,6 +35,9 @@ public class SftpConnection implements AutoCloseable {
     private Session session = null;
 
     public void open(String hostname, int port, String userName, String password) throws IOException {
+
+        LOGGER.info("Connect to SFTP '{}' with user: '{}'", hostname, userName);
+
         sshClient.addHostKeyVerifier(new PromiscuousVerifier());
         sshClient.connect(hostname, port);
         sshClient.authPassword(userName, password);
