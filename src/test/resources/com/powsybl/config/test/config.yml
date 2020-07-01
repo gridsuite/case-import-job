@@ -11,4 +11,4 @@ cassandra:
   port: 9142
 
 case-server:
-  url: http://localhost:45385
+  url: http://localhost:45385/
