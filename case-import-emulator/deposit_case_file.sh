@@ -24,9 +24,9 @@ echo "[INFO] $uniqueFileName deposit in ~/opde"
 echo "==End deposit new case file=="
 printf "\n"
 echo "==End remove old files=="
-cd ~/opde
+cd ~/opde	
 if [ $? -eq 0 ]; then
-    ls -tp ~/opde | grep -v '/$' | tail -n +101 | xargs -d '\n' -r rm --
+    ls -tp | grep -v '/$' | tail -n +101 | xargs -d '\n' -r rm --
 else
 	echo $?
 fi
