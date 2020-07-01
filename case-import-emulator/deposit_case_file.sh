@@ -28,7 +28,7 @@ cd ~/opde
 if [ $? -eq 0 ]; then
     ls -tp ~/opde | grep -v '/$' | tail -n +101 | xargs -d '\n' -r rm --
 else
-    echo "~/opde : Aucun fichier ou dossier de ce type"
+	echo $?
 fi
 echo "==Remove old files=="
 
