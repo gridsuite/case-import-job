@@ -23,17 +23,8 @@ mv ~/opde/"$uniqueFileName.tmp" ~/opde/$uniqueFileName
 echo "[INFO] $uniqueFileName deposit in ~/opde"
 echo "==End deposit new case file=="
 
-echo "==Remove old files=="
-#Clean old cases
-filesCount=$(ls -1q ~/opde* | wc -l)
-while [ $filesCount -gt 100 ] 
-do
-	#remove oldest file
-	oldestFile=$(find ~/opde -type f | sort | head -n 1)
-	rm $oldestFile
-	echo "[INFO] $oldestFile has been removed."
-	filesCount=$[$filesCount - 1]
-done
 echo "==End remove old files=="
-
+cd ~/opde
+ls -tp | grep -v '/$' | tail -n +101 | xargs -d '\n' -r rm --
+echo "==Remove old files=="
 
