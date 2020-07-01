@@ -81,12 +81,12 @@ public class SftpCaseAcquisitionJobTest {
 
     @Test
     public void testCaseImportRequester() throws IOException, InterruptedException {
-        CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester("http://localhost:45385");
-        mockServer.getClient().when(request().withMethod("POST").withPath("/case-server/v1/cases/public"))
+        CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester("http://localhost:45385/");
+        mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(200));
         assertTrue(caseImportServiceRequester.importCase(new TransferableFile("case.iidm", new String("Case file content").getBytes(UTF_8))));
         mockServer.getClient().clear(request());
-        mockServer.getClient().when(request().withMethod("POST").withPath("/case-server/v1/cases/public"))
+        mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(500));
         assertFalse(caseImportServiceRequester.importCase(new TransferableFile("case.iidm", new String("Case file content").getBytes(UTF_8))));
     }
@@ -104,36 +104,36 @@ public class SftpCaseAcquisitionJobTest {
         String[] args = null;
 
         // 2 files on SFTP server, 2 cases will be imported
-        mockServer.getClient().when(request().withMethod("POST").withPath("/case-server/v1/cases/public"))
+        mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
             .respond(response().withStatusCode(200));
         SftpCaseAcquisitionJob.main(args);
-        mockServer.getClient().verify(request().withMethod("POST").withPath("/case-server/v1/cases/public"), VerificationTimes.exactly(2));
+        mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(2));
         assertTrue(caseImportLogger.isImportedFile("case1.iidm", "my_sftp_server"));
         assertTrue(caseImportLogger.isImportedFile("case2.iidm", "my_sftp_server"));
 
         // No new files on SFTP server, no import requested
         mockServer.getClient().clear(request());
-        mockServer.getClient().when(request().withMethod("POST").withPath("/case-server/v1/cases/public"))
+        mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(200));
         SftpCaseAcquisitionJob.main(args);
-        mockServer.getClient().verify(request().withMethod("POST").withPath("/case-server/v1/cases/public"), VerificationTimes.exactly(0));
+        mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(0));
 
         // One new file on SFTP server, one case import requested
         mockServer.getClient().clear(request());
-        mockServer.getClient().when(request().withMethod("POST").withPath("/case-server/v1/cases/public"))
+        mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(200));
         SFTP_SERVER_RULE.putFile("/cases/case3.iidm", "fake file content 3", UTF_8);
         SftpCaseAcquisitionJob.main(args);
-        mockServer.getClient().verify(request().withMethod("POST").withPath("/case-server/v1/cases/public"), VerificationTimes.exactly(1));
+        mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(1));
         assertTrue(caseImportLogger.isImportedFile("case3.iidm", "my_sftp_server"));
 
         // One new file on server, but error when requesting import: case is not logged as imported
         mockServer.getClient().clear(request());
-        mockServer.getClient().when(request().withMethod("POST").withPath("/case-server/v1/cases/public"))
+        mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(500));
         SFTP_SERVER_RULE.putFile("/cases/case4.iidm", "fake file content 4", UTF_8);
         SftpCaseAcquisitionJob.main(args);
-        mockServer.getClient().verify(request().withMethod("POST").withPath("/case-server/v1/cases/public"), VerificationTimes.exactly(1));
+        mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(1));
         assertFalse(caseImportLogger.isImportedFile("case4.iidm", "my_sftp_server"));
     }
 }
