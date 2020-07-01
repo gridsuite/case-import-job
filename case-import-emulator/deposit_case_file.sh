@@ -1,28 +1,29 @@
 #!/bin/bash
-echo "Import new case"
+echo "==Deposit new case file=="
 
 importDate=$(date +"%Y%m%d_%H%M")
-echo "Import date = $importDate"
+
 fileToImport="example.xml"
 
 fileName=$(basename -- "cases/$fileToImport")
+echo "[INFO] File to deposit: $fileName"
 fileName="${fileName%.*}"
-echo "Filename = $fileName"
 
 uniqueFileName="${importDate}_SN5_D80.xml"
-echo "uniqueFileName = $uniqueFileName"
-
+echo "[INFO] File is deposit as: $uniqueFileName"
 
 cp cases/$fileToImport ~/opde/$uniqueFileName
 
 caseDate=$(date +"%Y-%m-%dT%T.000+01:00")
-echo "Case date = $caseDate"
 
-
+#Change the case date to the current date
 xsltproc --stringparam dateReplacement "$caseDate" changedate.xsl ~/opde/$uniqueFileName > ~/opde/"$uniqueFileName.tmp"
 rm ~/opde/$uniqueFileName
 mv ~/opde/"$uniqueFileName.tmp" ~/opde/$uniqueFileName
+echo "[INFO] $uniqueFileName deposit in ~/opde"
+echo "==End deposit new case file=="
 
+echo "==Remove old files=="
 #Clean old cases
 filesCount=$(ls -1q ~/opde* | wc -l)
 while [ $filesCount -gt 100 ] 
@@ -30,8 +31,9 @@ do
 	#remove oldest file
 	oldestFile=$(find ~/opde -type f | sort | head -n 1)
 	rm $oldestFile
+	echo "[INFO] $oldestFile has been removed."
 	filesCount=$[$filesCount - 1]
 done
-
+echo "==End remove old files=="
 
 
