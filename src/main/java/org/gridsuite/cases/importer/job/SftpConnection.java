@@ -26,7 +26,7 @@ import java.util.List;
  */
 public class SftpConnection implements AutoCloseable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SftpCaseAcquisitionJob.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SftpConnection.class);
 
     private final SSHClient sshClient = new SSHClient();
 
