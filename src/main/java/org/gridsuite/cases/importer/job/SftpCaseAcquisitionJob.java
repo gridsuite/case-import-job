@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -48,18 +49,32 @@ public final class SftpCaseAcquisitionJob {
             String casesDirectory = moduleConfigSftpServer.getStringProperty("cases-directory");
             String sftpServerLabel = moduleConfigSftpServer.getStringProperty("label");
             List<Path> filesToAcquire = sftpConnection.listFiles(casesDirectory);
+            LOGGER.info("{} files found on SFTP server", filesToAcquire.size());
+            List<Path> filesImported = new ArrayList<>();
+            List<Path> filesAlreadyImported = new ArrayList<>();
+            List<Path> filesImportFailed = new ArrayList<>();
             for (Path file : filesToAcquire) {
                 TransferableFile acquiredFile = sftpConnection.getFile(file.toString());
                 if (!caseImportLogger.isImportedFile(acquiredFile.getName(), sftpServerLabel)) {
-                    LOGGER.info("Import of : {}", file);
+                    LOGGER.info("Importing file '{}'...", file);
                     boolean importOk = caseImportServiceRequester.importCase(acquiredFile);
                     if (importOk) {
                         caseImportLogger.logFileAcquired(acquiredFile.getName(), sftpServerLabel, new Date());
+                        filesImported.add(file);
+                    } else {
+                        filesImportFailed.add(file);
                     }
                 } else {
-                    LOGGER.info("File already imported : {}", file);
+                    filesAlreadyImported.add(file);
                 }
             }
+            LOGGER.info("===== JOB EXECUTION SUMMARY =====");
+            LOGGER.info("{} files already imported", filesAlreadyImported.size());
+            LOGGER.info("{} files successfully imported", filesImported.size());
+            filesImported.forEach(f -> LOGGER.info("File '{}' successfully imported", f));
+            LOGGER.info("{} files import failed", filesImportFailed.size());
+            filesImportFailed.forEach(f -> LOGGER.info("File '{}' import failed !!", f));
+            LOGGER.info("=================================");
         } catch (Exception exc) {
             LOGGER.error("Job execution error: {}", exc.getMessage());
         }
