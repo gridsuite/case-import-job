@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:iidm="http://www.powsybl.org/schema/iidm/1_2"> 
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:iidm="http://www.powsybl.org/schema/iidm/1_3">
   <xsl:output method="xml" indent="yes"/>
   <xsl:param name="dateReplacement"/>
 
