@@ -3,12 +3,11 @@
 cgmesPath=$1
 country=$2
 outputDir=$3
-version=1
+version=001
 
 # generate a new date for the CGMES
 caseDateIso=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-caseDate=$(date -d $caseDateIso +"%Y%m%d_%H%M")
-dayOfTheWeek=$(date -d $caseDateIso '+%u')
+caseDate=$(date -d $caseDateIso +"%Y%m%dT%H%MZ")
 
 # create a working directory
 tmpDir=$(mktemp -d)
@@ -32,7 +31,7 @@ done
 # rebuild the zip with update profiles and using a new naming
 cd ..
 rm $zipFile
-newZipFile=${caseDate}_FO${dayOfTheWeek}_${country}${version}
+newZipFile=${caseDate}_1D_${country}_${version}
 zip -j $newZipFile $caseName/* >> /dev/null
 
 # copy the new CGMES to output directory
