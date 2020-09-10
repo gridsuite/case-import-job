@@ -1,8 +1,7 @@
 #!/bin/bash
 
 cgmesPath=$1
-country=$2
-outputDir=$3
+outputDir=$2
 version=1
 
 # generate a new date for the CGMES
