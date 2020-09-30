@@ -13,6 +13,12 @@ import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockftpserver.fake.FakeFtpServer;
+import org.mockftpserver.fake.UserAccount;
+import org.mockftpserver.fake.filesystem.DirectoryEntry;
+import org.mockftpserver.fake.filesystem.FileEntry;
+import org.mockftpserver.fake.filesystem.FileSystem;
+import org.mockftpserver.fake.filesystem.UnixFakeFileSystem;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
 import org.slf4j.Logger;
@@ -62,7 +68,7 @@ public class SftpCaseAcquisitionJobTest {
     }
 
     @Test
-    public void testSftpConnection() throws IOException {
+    public void testSftpAcquisition() throws IOException {
 
         SFTP_SERVER_RULE.createDirectory("/cases");
         SFTP_SERVER_RULE.putFile("/cases/case1.iidm", "fake file content 1", UTF_8);
@@ -83,6 +89,42 @@ public class SftpCaseAcquisitionJobTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void testFtpAcquisition() throws IOException {
+
+        FileSystem fileSystem = new UnixFakeFileSystem();
+        fileSystem.add(new DirectoryEntry("/cases"));
+        fileSystem.add(new FileEntry("/cases/case1.iidm", "fake file content 1"));
+        fileSystem.add(new FileEntry("/cases/case2.iidm", "fake file content 2"));
+
+        FakeFtpServer fakeFtpServer = new FakeFtpServer();
+        fakeFtpServer.addUserAccount(new UserAccount("dummy_ftp", "dummy_ftp", "/"));
+        fakeFtpServer.setFileSystem(fileSystem);
+        fakeFtpServer.setServerControlPort(0);
+
+        fakeFtpServer.start();
+
+        try (AcquisitionServer acquisitionServer = new AcquisitionServer()) {
+            String acquisitionServerUrl = "ftp://localhost:" + fakeFtpServer.getServerControlPort();
+            acquisitionServer.configure(acquisitionServerUrl, fakeFtpServer.getServerControlPort(), "dummy_ftp", "dummy_ftp");
+            Map<String, String> retrievedFiles = acquisitionServer.listFiles("./cases");
+            assertEquals(2, retrievedFiles.size());
+
+            TransferableFile file1 = acquisitionServer.getFile("case1.iidm", acquisitionServerUrl + "/cases/case1.iidm");
+            assertEquals("case1.iidm", file1.getName());
+            assertEquals("fake file content 1", new String(file1.getData(), UTF_8));
+
+            TransferableFile file2 = acquisitionServer.getFile("case2.iidm", acquisitionServerUrl + "/cases/case2.iidm");
+            assertEquals("case2.iidm", file2.getName());
+            assertEquals("fake file content 2", new String(file2.getData(), UTF_8));
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            fakeFtpServer.stop();
+        }
+
     }
 
     @Test

@@ -10,6 +10,7 @@ import org.apache.commons.vfs2.*;
 import org.apache.commons.vfs2.auth.StaticUserAuthenticator;
 import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
+import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
 import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,9 @@ public class AcquisitionServer implements AutoCloseable {
         SftpFileSystemConfigBuilder.getInstance().setUserDirIsRoot(fsOptions, true);
         SftpFileSystemConfigBuilder.getInstance().setPreferredAuthentications(fsOptions, "publickey,password");
         SftpFileSystemConfigBuilder.getInstance().setConnectTimeoutMillis(fsOptions, 30000);
+
+        FtpFileSystemConfigBuilder.getInstance().setUserDirIsRoot(fsOptions, true);
+        FtpFileSystemConfigBuilder.getInstance().setConnectTimeout(fsOptions, 30000);
 
         fsManager.init();
     }
