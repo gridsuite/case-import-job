@@ -53,19 +53,19 @@ public final class CaseAcquisitionJob {
             List<String> filesImported = new ArrayList<>();
             List<String> filesAlreadyImported = new ArrayList<>();
             List<String> filesImportFailed = new ArrayList<>();
-            for (String fileName : filesToAcquire.keySet()) {
-                if (!caseImportLogger.isImportedFile(fileName, serverLabel)) {
-                    TransferableFile acquiredFile = acquisitionServer.getFile(fileName, filesToAcquire.get(fileName));
-                    LOGGER.info("Importing file '{}'...", fileName);
+            for (Map.Entry<String, String> fileInfo : filesToAcquire.entrySet()) {
+                if (!caseImportLogger.isImportedFile(fileInfo.getKey(), serverLabel)) {
+                    TransferableFile acquiredFile = acquisitionServer.getFile(fileInfo.getKey(), fileInfo.getValue());
+                    LOGGER.info("Importing file '{}'...", fileInfo.getKey());
                     boolean importOk = caseImportServiceRequester.importCase(acquiredFile);
                     if (importOk) {
                         caseImportLogger.logFileAcquired(acquiredFile.getName(), serverLabel, new Date());
-                        filesImported.add(fileName);
+                        filesImported.add(fileInfo.getKey());
                     } else {
-                        filesImportFailed.add(fileName);
+                        filesImportFailed.add(fileInfo.getKey());
                     }
                 } else {
-                    filesAlreadyImported.add(fileName);
+                    filesAlreadyImported.add(fileInfo.getKey());
                 }
             }
             LOGGER.info("===== JOB EXECUTION SUMMARY =====");
