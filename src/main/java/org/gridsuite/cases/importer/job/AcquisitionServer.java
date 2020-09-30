@@ -34,16 +34,7 @@ public class AcquisitionServer implements AutoCloseable {
 
     private String serverUrl;
 
-    public static AcquisitionServer create(String url, String userName, String password) throws FileSystemException {
-        AcquisitionServer acquisitionServer = new AcquisitionServer();
-        acquisitionServer.configure(url, userName, password);
-        return acquisitionServer;
-    }
-
-    private void configure(String url, String userName, String password) throws FileSystemException {
-
-        LOGGER.info("Configure acquisition server '{}' with user: '{}'", url, userName);
-
+    public AcquisitionServer(String url, String userName, String password) throws FileSystemException {
         serverUrl = url;
 
         StaticUserAuthenticator auth = new StaticUserAuthenticator(null, userName, password);
@@ -56,7 +47,9 @@ public class AcquisitionServer implements AutoCloseable {
         FtpFileSystemConfigBuilder.getInstance().setUserDirIsRoot(fsOptions, true);
         FtpFileSystemConfigBuilder.getInstance().setConnectTimeout(fsOptions, 30000);
         FtpFileSystemConfigBuilder.getInstance().setPassiveMode(fsOptions, true);
+    }
 
+    public void open() throws FileSystemException {
         fsManager.init();
     }
 

@@ -75,7 +75,8 @@ public class CaseAcquisitionJobTest {
         SFTP_SERVER_RULE.putFile("/cases/case2.iidm", "fake file content 2", UTF_8);
         String acquisitionServerUrl = "sftp://localhost:" + SFTP_SERVER_RULE.getPort();
 
-        try (AcquisitionServer acquisitionServer = AcquisitionServer.create(acquisitionServerUrl, "dummy", "dummy")) {
+        try (AcquisitionServer acquisitionServer = new AcquisitionServer(acquisitionServerUrl, "dummy", "dummy")) {
+            acquisitionServer.open();
             Map<String, String> retrievedFiles = acquisitionServer.listFiles("./cases");
             assertEquals(2, retrievedFiles.size());
 
@@ -107,7 +108,8 @@ public class CaseAcquisitionJobTest {
         fakeFtpServer.start();
 
         String acquisitionServerUrl = "ftp://localhost:" + fakeFtpServer.getServerControlPort();
-        try (AcquisitionServer acquisitionServer = AcquisitionServer.create(acquisitionServerUrl, "dummy_ftp", "dummy_ftp")) {
+        try (AcquisitionServer acquisitionServer = new AcquisitionServer(acquisitionServerUrl, "dummy_ftp", "dummy_ftp")) {
+            acquisitionServer.open();
             Map<String, String> retrievedFiles = acquisitionServer.listFiles("./cases");
             assertEquals(2, retrievedFiles.size());
 
