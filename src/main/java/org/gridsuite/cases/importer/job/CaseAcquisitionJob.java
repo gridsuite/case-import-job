@@ -54,7 +54,6 @@ public final class CaseAcquisitionJob {
             List<String> filesAlreadyImported = new ArrayList<>();
             List<String> filesImportFailed = new ArrayList<>();
             for (String fileName : filesToAcquire.keySet()) {
-                LOGGER.info("Retrieving file '{}'...", fileName);
                 if (!caseImportLogger.isImportedFile(fileName, serverLabel)) {
                     TransferableFile acquiredFile = acquisitionServer.getFile(fileName, filesToAcquire.get(fileName));
                     LOGGER.info("Importing file '{}'...", fileName);
