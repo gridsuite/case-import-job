@@ -34,9 +34,6 @@ public class AcquisitionServer implements AutoCloseable {
 
     private String serverUrl;
 
-    public AcquisitionServer() {
-    }
-
     public void configure(String url, String userName, String password) throws FileSystemException {
 
         LOGGER.info("Configure acquisition server '{}' with user: '{}'", url, userName);
