@@ -52,6 +52,7 @@ public class AcquisitionServer implements AutoCloseable {
 
         FtpFileSystemConfigBuilder.getInstance().setUserDirIsRoot(fsOptions, true);
         FtpFileSystemConfigBuilder.getInstance().setConnectTimeout(fsOptions, 30000);
+        FtpFileSystemConfigBuilder.getInstance().setPassiveMode(fsOptions, true);
 
         fsManager.init();
     }
