@@ -1,6 +1,5 @@
-sftp-server:
+acquisition-server:
   url: sftp://localhost:2222
-  port: 2222
   username: dummy
   password: dummy
   cases-directory: ./cases

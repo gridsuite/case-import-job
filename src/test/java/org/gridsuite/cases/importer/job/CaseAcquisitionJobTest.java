@@ -36,9 +36,9 @@ import static org.mockserver.model.HttpResponse.response;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class SftpCaseAcquisitionJobTest {
+public class CaseAcquisitionJobTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SftpCaseAcquisitionJobTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CaseAcquisitionJobTest.class);
 
     @ClassRule
     public static final CassandraRule CASSANDRA_RULE = new CassandraRule().withCassandraFactory(EmbeddedCassandraFactoryConfig.embeddedCassandraFactory())
@@ -75,15 +75,16 @@ public class SftpCaseAcquisitionJobTest {
         SFTP_SERVER_RULE.putFile("/cases/case2.iidm", "fake file content 2", UTF_8);
 
         try (AcquisitionServer acquisitionServer = new AcquisitionServer()) {
-            acquisitionServer.configure("sftp://localhost:2222", SFTP_SERVER_RULE.getPort(), "dummy", "dummy");
+            String acquisitionServerUrl = "sftp://localhost:" + SFTP_SERVER_RULE.getPort();
+            acquisitionServer.configure(acquisitionServerUrl, "dummy", "dummy");
             Map<String, String> retrievedFiles = acquisitionServer.listFiles("./cases");
             assertEquals(2, retrievedFiles.size());
 
-            TransferableFile file1 = acquisitionServer.getFile("case1.iidm", "sftp://localhost:2222/cases/case1.iidm");
+            TransferableFile file1 = acquisitionServer.getFile("case1.iidm", acquisitionServerUrl + "/cases/case1.iidm");
             assertEquals("case1.iidm", file1.getName());
             assertEquals("fake file content 1", new String(file1.getData(), UTF_8));
 
-            TransferableFile file2 = acquisitionServer.getFile("case2.iidm", "sftp://localhost:2222/cases/case2.iidm");
+            TransferableFile file2 = acquisitionServer.getFile("case2.iidm", acquisitionServerUrl + "/cases/case2.iidm");
             assertEquals("case2.iidm", file2.getName());
             assertEquals("fake file content 2", new String(file2.getData(), UTF_8));
         } catch (IOException e) {
@@ -108,7 +109,7 @@ public class SftpCaseAcquisitionJobTest {
 
         try (AcquisitionServer acquisitionServer = new AcquisitionServer()) {
             String acquisitionServerUrl = "ftp://localhost:" + fakeFtpServer.getServerControlPort();
-            acquisitionServer.configure(acquisitionServerUrl, fakeFtpServer.getServerControlPort(), "dummy_ftp", "dummy_ftp");
+            acquisitionServer.configure(acquisitionServerUrl, "dummy_ftp", "dummy_ftp");
             Map<String, String> retrievedFiles = acquisitionServer.listFiles("./cases");
             assertEquals(2, retrievedFiles.size());
 
@@ -154,7 +155,7 @@ public class SftpCaseAcquisitionJobTest {
         // 2 files on SFTP server, 2 cases will be imported
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
             .respond(response().withStatusCode(200));
-        SftpCaseAcquisitionJob.main(args);
+        CaseAcquisitionJob.main(args);
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(2));
         assertTrue(caseImportLogger.isImportedFile("case1.iidm", "my_sftp_server"));
         assertTrue(caseImportLogger.isImportedFile("case2.iidm", "my_sftp_server"));
@@ -163,7 +164,7 @@ public class SftpCaseAcquisitionJobTest {
         mockServer.getClient().clear(request());
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(200));
-        SftpCaseAcquisitionJob.main(args);
+        CaseAcquisitionJob.main(args);
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(0));
 
         // One new file on SFTP server, one case import requested
@@ -171,7 +172,7 @@ public class SftpCaseAcquisitionJobTest {
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(200));
         SFTP_SERVER_RULE.putFile("/cases/case3.iidm", "fake file content 3", UTF_8);
-        SftpCaseAcquisitionJob.main(args);
+        CaseAcquisitionJob.main(args);
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(1));
         assertTrue(caseImportLogger.isImportedFile("case3.iidm", "my_sftp_server"));
 
@@ -180,7 +181,7 @@ public class SftpCaseAcquisitionJobTest {
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(500));
         SFTP_SERVER_RULE.putFile("/cases/case4.iidm", "fake file content 4", UTF_8);
-        SftpCaseAcquisitionJob.main(args);
+        CaseAcquisitionJob.main(args);
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(1));
         assertFalse(caseImportLogger.isImportedFile("case4.iidm", "my_sftp_server"));
     }

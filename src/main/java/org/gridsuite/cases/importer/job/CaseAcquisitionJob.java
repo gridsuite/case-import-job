@@ -19,49 +19,48 @@ import java.util.Map;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public final class SftpCaseAcquisitionJob {
+public final class CaseAcquisitionJob {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SftpCaseAcquisitionJob.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CaseAcquisitionJob.class);
 
-    private SftpCaseAcquisitionJob() {
+    private CaseAcquisitionJob() {
     }
 
     public static void main(String... args) {
 
         PlatformConfig platformConfig = PlatformConfig.defaultConfig();
 
-        ModuleConfig moduleConfigSftpServer = platformConfig.getModuleConfig("sftp-server");
+        ModuleConfig moduleConfigAcquisitionServer = platformConfig.getModuleConfig("acquisition-server");
         ModuleConfig moduleConfigCassandra = platformConfig.getModuleConfig("cassandra");
         ModuleConfig moduleConfigCaseServer = platformConfig.getModuleConfig("case-server");
 
         final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(moduleConfigCaseServer.getStringProperty("url"));
 
-        try (AcquisitionServer sftpConnection = new AcquisitionServer();
+        try (AcquisitionServer acquisitionServer = new AcquisitionServer();
              CaseImportLogger caseImportLogger = new CaseImportLogger()) {
 
-            sftpConnection.configure(moduleConfigSftpServer.getStringProperty("url"),
-                                moduleConfigSftpServer.getIntProperty("port", 22),
-                                moduleConfigSftpServer.getStringProperty("username"),
-                                moduleConfigSftpServer.getStringProperty("password"));
+            acquisitionServer.configure(moduleConfigAcquisitionServer.getStringProperty("url"),
+                                moduleConfigAcquisitionServer.getStringProperty("username"),
+                                moduleConfigAcquisitionServer.getStringProperty("password"));
 
             caseImportLogger.connectDb(moduleConfigCassandra.getStringProperty("contact-points"), moduleConfigCassandra.getIntProperty("port"));
 
-            String casesDirectory = moduleConfigSftpServer.getStringProperty("cases-directory");
-            String sftpServerLabel = moduleConfigSftpServer.getStringProperty("label");
-            Map<String, String> filesToAcquire = sftpConnection.listFiles(casesDirectory);
-            LOGGER.info("{} files found on SFTP server", filesToAcquire.size());
+            String casesDirectory = moduleConfigAcquisitionServer.getStringProperty("cases-directory");
+            String serverLabel = moduleConfigAcquisitionServer.getStringProperty("label");
+            Map<String, String> filesToAcquire = acquisitionServer.listFiles(casesDirectory);
+            LOGGER.info("{} files found on server", filesToAcquire.size());
 
             List<String> filesImported = new ArrayList<>();
             List<String> filesAlreadyImported = new ArrayList<>();
             List<String> filesImportFailed = new ArrayList<>();
             for (String fileName : filesToAcquire.keySet()) {
                 LOGGER.info("Retrieving file '{}'...", fileName);
-                if (!caseImportLogger.isImportedFile(fileName, sftpServerLabel)) {
-                    TransferableFile acquiredFile = sftpConnection.getFile(fileName, filesToAcquire.get(fileName));
+                if (!caseImportLogger.isImportedFile(fileName, serverLabel)) {
+                    TransferableFile acquiredFile = acquisitionServer.getFile(fileName, filesToAcquire.get(fileName));
                     LOGGER.info("Importing file '{}'...", fileName);
                     boolean importOk = caseImportServiceRequester.importCase(acquiredFile);
                     if (importOk) {
-                        caseImportLogger.logFileAcquired(acquiredFile.getName(), sftpServerLabel, new Date());
+                        caseImportLogger.logFileAcquired(acquiredFile.getName(), serverLabel, new Date());
                         filesImported.add(fileName);
                     } else {
                         filesImportFailed.add(fileName);

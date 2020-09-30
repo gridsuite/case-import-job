@@ -1,5 +1,5 @@
-sftp-server:
-  url: sftp://localhost
+acquisition-server:
+  url: sftp://localhost:22
   username: my_username
   password: my_password
   cases-directory: ./cases
