@@ -36,12 +36,10 @@ public final class CaseAcquisitionJob {
 
         final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(moduleConfigCaseServer.getStringProperty("url"));
 
-        try (AcquisitionServer acquisitionServer = new AcquisitionServer();
+        try (AcquisitionServer acquisitionServer = AcquisitionServer.create(moduleConfigAcquisitionServer.getStringProperty("url"),
+                                                                            moduleConfigAcquisitionServer.getStringProperty("username"),
+                                                                            moduleConfigAcquisitionServer.getStringProperty("password"));
              CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-
-            acquisitionServer.configure(moduleConfigAcquisitionServer.getStringProperty("url"),
-                                moduleConfigAcquisitionServer.getStringProperty("username"),
-                                moduleConfigAcquisitionServer.getStringProperty("password"));
 
             caseImportLogger.connectDb(moduleConfigCassandra.getStringProperty("contact-points"), moduleConfigCassandra.getIntProperty("port"));
 
