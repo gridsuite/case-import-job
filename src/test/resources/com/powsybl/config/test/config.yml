@@ -1,5 +1,5 @@
 sftp-server:
-  hostname: localhost
+  url: sftp://localhost:2222
   port: 2222
   username: dummy
   password: dummy

@@ -11,10 +11,10 @@ import com.powsybl.commons.config.PlatformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
@@ -36,10 +36,10 @@ public final class SftpCaseAcquisitionJob {
 
         final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(moduleConfigCaseServer.getStringProperty("url"));
 
-        try (SftpConnection sftpConnection = new SftpConnection();
+        try (AcquisitionServer sftpConnection = new AcquisitionServer();
              CaseImportLogger caseImportLogger = new CaseImportLogger()) {
 
-            sftpConnection.open(moduleConfigSftpServer.getStringProperty("hostname"),
+            sftpConnection.configure(moduleConfigSftpServer.getStringProperty("url"),
                                 moduleConfigSftpServer.getIntProperty("port", 22),
                                 moduleConfigSftpServer.getStringProperty("username"),
                                 moduleConfigSftpServer.getStringProperty("password"));
@@ -48,24 +48,26 @@ public final class SftpCaseAcquisitionJob {
 
             String casesDirectory = moduleConfigSftpServer.getStringProperty("cases-directory");
             String sftpServerLabel = moduleConfigSftpServer.getStringProperty("label");
-            List<Path> filesToAcquire = sftpConnection.listFiles(casesDirectory);
+            Map<String, String> filesToAcquire = sftpConnection.listFiles(casesDirectory);
             LOGGER.info("{} files found on SFTP server", filesToAcquire.size());
-            List<Path> filesImported = new ArrayList<>();
-            List<Path> filesAlreadyImported = new ArrayList<>();
-            List<Path> filesImportFailed = new ArrayList<>();
-            for (Path file : filesToAcquire) {
-                TransferableFile acquiredFile = sftpConnection.getFile(file.toString());
-                if (!caseImportLogger.isImportedFile(acquiredFile.getName(), sftpServerLabel)) {
-                    LOGGER.info("Importing file '{}'...", file);
+
+            List<String> filesImported = new ArrayList<>();
+            List<String> filesAlreadyImported = new ArrayList<>();
+            List<String> filesImportFailed = new ArrayList<>();
+            for (String fileName : filesToAcquire.keySet()) {
+                LOGGER.info("Retrieving file '{}'...", fileName);
+                if (!caseImportLogger.isImportedFile(fileName, sftpServerLabel)) {
+                    TransferableFile acquiredFile = sftpConnection.getFile(fileName, filesToAcquire.get(fileName));
+                    LOGGER.info("Importing file '{}'...", fileName);
                     boolean importOk = caseImportServiceRequester.importCase(acquiredFile);
                     if (importOk) {
                         caseImportLogger.logFileAcquired(acquiredFile.getName(), sftpServerLabel, new Date());
-                        filesImported.add(file);
+                        filesImported.add(fileName);
                     } else {
-                        filesImportFailed.add(file);
+                        filesImportFailed.add(fileName);
                     }
                 } else {
-                    filesAlreadyImported.add(file);
+                    filesAlreadyImported.add(fileName);
                 }
             }
             LOGGER.info("===== JOB EXECUTION SUMMARY =====");
@@ -75,6 +77,7 @@ public final class SftpCaseAcquisitionJob {
             LOGGER.info("{} files import failed", filesImportFailed.size());
             filesImportFailed.forEach(f -> LOGGER.info("File '{}' import failed !!", f));
             LOGGER.info("=================================");
+
         } catch (Exception exc) {
             LOGGER.error("Job execution error: {}", exc.getMessage());
         }

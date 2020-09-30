@@ -9,14 +9,18 @@ package org.gridsuite.cases.importer.job;
 import com.github.nosan.embedded.cassandra.api.cql.CqlDataSet;
 import com.github.nosan.embedded.cassandra.junit4.test.CassandraRule;
 import com.github.stefanbirkner.fakesftpserver.rule.FakeSftpServerRule;
-import org.junit.*;
+import org.junit.After;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Date;
-import java.util.List;
+import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
@@ -27,6 +31,8 @@ import static org.mockserver.model.HttpResponse.response;
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
 public class SftpCaseAcquisitionJobTest {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SftpCaseAcquisitionJobTest.class);
 
     @ClassRule
     public static final CassandraRule CASSANDRA_RULE = new CassandraRule().withCassandraFactory(EmbeddedCassandraFactoryConfig.embeddedCassandraFactory())
@@ -62,16 +68,16 @@ public class SftpCaseAcquisitionJobTest {
         SFTP_SERVER_RULE.putFile("/cases/case1.iidm", "fake file content 1", UTF_8);
         SFTP_SERVER_RULE.putFile("/cases/case2.iidm", "fake file content 2", UTF_8);
 
-        try (SftpConnection sftpConnection = new SftpConnection()) {
-            sftpConnection.open("localhost", SFTP_SERVER_RULE.getPort(), "dummy", "dummy");
-            List<Path> retrievedFiles = sftpConnection.listFiles("./cases");
+        try (AcquisitionServer acquisitionServer = new AcquisitionServer()) {
+            acquisitionServer.configure("sftp://localhost:2222", SFTP_SERVER_RULE.getPort(), "dummy", "dummy");
+            Map<String, String> retrievedFiles = acquisitionServer.listFiles("./cases");
             assertEquals(2, retrievedFiles.size());
 
-            TransferableFile file1 = sftpConnection.getFile("./cases/case1.iidm");
+            TransferableFile file1 = acquisitionServer.getFile("case1.iidm", "sftp://localhost:2222/cases/case1.iidm");
             assertEquals("case1.iidm", file1.getName());
             assertEquals("fake file content 1", new String(file1.getData(), UTF_8));
 
-            TransferableFile file2 = sftpConnection.getFile("./cases/case2.iidm");
+            TransferableFile file2 = acquisitionServer.getFile("case2.iidm", "sftp://localhost:2222/cases/case2.iidm");
             assertEquals("case2.iidm", file2.getName());
             assertEquals("fake file content 2", new String(file2.getData(), UTF_8));
         } catch (IOException e) {
@@ -136,4 +142,5 @@ public class SftpCaseAcquisitionJobTest {
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(1));
         assertFalse(caseImportLogger.isImportedFile("case4.iidm", "my_sftp_server"));
     }
+
 }

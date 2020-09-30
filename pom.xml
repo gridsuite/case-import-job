@@ -24,8 +24,8 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <packaging>jar</packaging>
-    <name>SFTP acquisition job</name>
-    <description>SFTP acquisition job</description>
+    <name>Case acquisition job</name>
+    <description>Case acquisition job</description>
     <url>http://www.gridsuite.org/</url>
 
     <scm>
@@ -48,9 +48,10 @@
 
         <gridsuite-dependencies.version>1</gridsuite-dependencies.version>
 
-        <sshj.version>0.29.0</sshj.version>
+        <jcraft.version>0.1.55</jcraft.version>
         <fake.sftp.server.version>2.0.1</fake.sftp.server.version>
         <mockserver.version>5.10.0</mockserver.version>
+        <apache.commons.vfs2.version>2.6.0</apache.commons.vfs2.version>
     </properties>
 
     <build>
@@ -94,9 +95,14 @@
 
             <!-- project specific dependencies -->
             <dependency>
-                <groupId>com.hierynomus</groupId>
-                <artifactId>sshj</artifactId>
-                <version>${sshj.version}</version>
+                <groupId>com.jcraft</groupId>
+                <artifactId>jsch</artifactId>
+                <version>${jcraft.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-vfs2</artifactId>
+                <version>${apache.commons.vfs2.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.stefanbirkner</groupId>
@@ -119,16 +125,20 @@
     <dependencies>
         <!-- Compilation dependencies -->
         <dependency>
+            <groupId>com.jcraft</groupId>
+            <artifactId>jsch</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-vfs2</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-commons</artifactId>
         </dependency>
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
             <artifactId>cassandra-driver-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.hierynomus</groupId>
-            <artifactId>sshj</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
