@@ -9,10 +9,18 @@ then
 fi
 version=001
 
+# $1 is the xml file name
+getUuid()
+{
+  local ret=$(grep 'md:FullModel.*rdf:about=' $1 | cut -d'"' -f 2 | cut -d':' -f 3)
+  echo "$ret"
+}
+
 # update uuid in xml profile
 # $1 is the new uuid
 # $2 is the xml file name
-updateUuid() {
+updateUuid()
+{
   sed -i -e "s/\(<md:FullModel[ ]*rdf:about=\"urn:uuid:\).*\(\">\)/\1$1\2/g" $2
 }
 
@@ -80,24 +88,24 @@ else
     # memorizing old and new uuid, and setting new uuid for SV, TP, EQ, SSH profiles
     if [[ "$xmlFile" =~ ^.*_(SV)_[0-9]+[.]xml$ ]]
     then
-      oldUuidSV=$(grep 'md:FullModel.*rdf:about=' $xmlFile | cut -d'"' -f 2 | cut -d':' -f 3)
+      oldUuidSV=$(getUuid $xmlFile)
       newUuidSV=$(uuidgen)
-      sed -i -e "s/\(<md:FullModel[ ]*rdf:about=\"urn:uuid:\).*\(\">\)/\1${newUuidSV}\2/g" $xmlFile
+      updateUuid ${newUuidSV} $xmlFile
     elif [[ "$xmlFile" =~ ^.*_(TP)_[0-9]+[.]xml$ ]]
     then
-      oldUuidTP=$(grep 'md:FullModel.*rdf:about=' $xmlFile | cut -d'"' -f 2 | cut -d':' -f 3)
+      oldUuidTP=$(getUuid $xmlFile)
       newUuidTP=$(uuidgen)
-      sed -i -e "s/\(<md:FullModel[ ]*rdf:about=\"urn:uuid:\).*\(\">\)/\1${newUuidTP}\2/g" $xmlFile
+      updateUuid ${newUuidTP} $xmlFile
     elif [[ "$xmlFile" =~ ^.*_(EQ)_[0-9]+[.]xml$ ]]
     then
-      oldUuidEQ=$(grep 'md:FullModel.*rdf:about=' $xmlFile | cut -d'"' -f 2 | cut -d':' -f 3)
+      oldUuidEQ=$(getUuid $xmlFile)
       newUuidEQ=$(uuidgen)
-      sed -i -e "s/\(<md:FullModel[ ]*rdf:about=\"urn:uuid:\).*\(\">\)/\1${newUuidEQ}\2/g" $xmlFile
+      updateUuid ${newUuidEQ} $xmlFile
     elif [[ "$xmlFile" =~ ^.*_(SSH)_[0-9]+[.]xml$ ]]
     then
-      oldUuidSSH=$(grep 'md:FullModel.*rdf:about=' $xmlFile | cut -d'"' -f 2 | cut -d':' -f 3)
+      oldUuidSSH=$(getUuid $xmlFile)
       newUuidSSH=$(uuidgen)
-      sed -i -e "s/\(<md:FullModel[ ]*rdf:about=\"urn:uuid:\).*\(\">\)/\1${newUuidSSH}\2/g" $xmlFile
+      updateUuid ${newUuidSSH} $xmlFile
     fi
   done
 
