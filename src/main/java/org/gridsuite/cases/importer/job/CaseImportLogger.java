@@ -6,13 +6,13 @@
  */
 package org.gridsuite.cases.importer.job;
 
-import com.datastax.driver.core.PreparedStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
+import com.datastax.oss.driver.api.core.cql.PreparedStatement;
+import com.datastax.oss.driver.api.core.cql.ResultSet;
+import com.datastax.oss.driver.api.core.cql.Row;
 
 import java.util.Date;
 
-import static com.datastax.driver.core.querybuilder.QueryBuilder.*;
+import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.*;
 
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
@@ -37,22 +37,26 @@ public class CaseImportLogger implements AutoCloseable {
         psInsertImportedFile = connector.getSession().prepare(insertInto(KEYSPACE_IMPORT_HISTORY, FILES_TABLE)
                 .value(FILENAME_COLUMN, bindMarker())
                 .value(ORIGIN_COLUMN, bindMarker())
-                .value(IMPORT_DATE_COLUMN, bindMarker()));
+                .value(IMPORT_DATE_COLUMN, bindMarker())
+                .build());
 
     }
 
     public boolean isImportedFile(String filename, String origin) {
-        ResultSet resultSet = connector.getSession().execute(select(FILENAME_COLUMN,
-                ORIGIN_COLUMN,
-                IMPORT_DATE_COLUMN)
-                .from(KEYSPACE_IMPORT_HISTORY, FILES_TABLE)
-                .where(eq(FILENAME_COLUMN, filename)).and(eq(ORIGIN_COLUMN, origin)));
+        ResultSet resultSet = connector.getSession().execute(selectFrom(KEYSPACE_IMPORT_HISTORY, FILES_TABLE)
+                .columns(
+                        FILENAME_COLUMN,
+                        ORIGIN_COLUMN,
+                        IMPORT_DATE_COLUMN)
+                .whereColumn(FILENAME_COLUMN).isEqualTo(literal(filename))
+                .whereColumn(ORIGIN_COLUMN).isEqualTo(literal(origin))
+                .build());
         Row one = resultSet.one();
         return one != null;
     }
 
     public void logFileAcquired(String fileName, String origin, Date date) {
-        connector.getSession().execute(psInsertImportedFile.bind(fileName, origin, date));
+        connector.getSession().execute(psInsertImportedFile.bind(fileName, origin, date.toInstant()));
     }
 
     public void close() {
