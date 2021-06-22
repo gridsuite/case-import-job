@@ -42,7 +42,7 @@ public final class CaseAcquisitionJob {
              CaseImportLogger caseImportLogger = new CaseImportLogger()) {
             acquisitionServer.open();
 
-            caseImportLogger.connectDb(moduleConfigCassandra.getStringProperty("contact-points"), moduleConfigCassandra.getIntProperty("port"));
+            caseImportLogger.connectDb(moduleConfigCassandra.getStringProperty("contact-points"), moduleConfigCassandra.getIntProperty("port"), moduleConfigCassandra.getStringProperty("datacenter"));
 
             String casesDirectory = moduleConfigAcquisitionServer.getStringProperty("cases-directory");
             String serverLabel = moduleConfigAcquisitionServer.getStringProperty("label");

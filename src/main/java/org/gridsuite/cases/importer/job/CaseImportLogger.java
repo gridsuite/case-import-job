@@ -29,8 +29,8 @@ public class CaseImportLogger implements AutoCloseable {
 
     private PreparedStatement psInsertImportedFile;
 
-    public void connectDb(String hostname, int port) {
-        connector.connect(hostname, port);
+    public void connectDb(String hostname, int port, String datacenter) {
+        connector.connect(hostname, port, datacenter);
 
         psInsertImportedFile = connector.getSession().prepare(insertInto(KEYSPACE_IMPORT_HISTORY, FILES_TABLE)
                 .value(FILENAME_COLUMN, bindMarker())

@@ -16,9 +16,9 @@ public class CassandraConnector {
 
     private CqlSession session;
 
-    public void connect(final String node, final int port) {
+    public void connect(final String node, final int port, String datacenter) {
         var inetAddress = new InetSocketAddress(node, port);
-        this.session = CqlSession.builder().addContactPoint(inetAddress).withLocalDatacenter("datacenter1").build();
+        this.session = CqlSession.builder().addContactPoint(inetAddress).withLocalDatacenter(datacenter).build();
     }
 
     public CqlSession getSession() {
