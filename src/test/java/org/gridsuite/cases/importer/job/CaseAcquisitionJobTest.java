@@ -59,7 +59,7 @@ public class CaseAcquisitionJobTest {
     @Test
     public void historyLoggerTest() {
         try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-            caseImportLogger.connectDb("localhost", 9142);
+            caseImportLogger.connectDb("localhost", 9142, "datacenter1");
             Date importDate = new Date();
             assertFalse(caseImportLogger.isImportedFile("testFile.iidm", "my_sftp_server"));
             caseImportLogger.logFileAcquired("testFile.iidm", "my_sftp_server", importDate);
@@ -148,7 +148,7 @@ public class CaseAcquisitionJobTest {
         SFTP_SERVER_RULE.putFile("/cases/case2.iidm", "fake file content 2", UTF_8);
 
         CaseImportLogger caseImportLogger = new CaseImportLogger();
-        caseImportLogger.connectDb("localhost", 9142);
+        caseImportLogger.connectDb("localhost", 9142, "datacenter1");
 
         String[] args = null;
 
