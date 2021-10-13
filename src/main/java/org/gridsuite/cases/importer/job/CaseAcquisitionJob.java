@@ -11,6 +11,7 @@ import com.powsybl.commons.config.PlatformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -75,8 +76,11 @@ public final class CaseAcquisitionJob {
             filesImportFailed.forEach(f -> LOGGER.info("File '{}' import failed !!", f));
             LOGGER.info("=================================");
 
-        } catch (Exception exc) {
-            LOGGER.error("Job execution error: {}", exc.getMessage());
+        } catch (IOException exc) {
+            LOGGER.error("Job execution error: {}", exc.getMessage(), exc);
+        } catch (InterruptedException exc) {
+            LOGGER.error("Job has been interrupted: {}", exc.getMessage(), exc);
+            Thread.currentThread().interrupt();
         }
     }
 }
