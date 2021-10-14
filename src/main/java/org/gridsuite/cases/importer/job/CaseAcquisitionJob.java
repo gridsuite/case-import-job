@@ -11,6 +11,7 @@ import com.powsybl.commons.config.PlatformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,7 +27,7 @@ public final class CaseAcquisitionJob {
     private CaseAcquisitionJob() {
     }
 
-    public static void main(String... args) {
+    public static void main(String... args) throws InterruptedException, IOException {
 
         PlatformConfig platformConfig = PlatformConfig.defaultConfig();
 
@@ -74,9 +75,6 @@ public final class CaseAcquisitionJob {
             LOGGER.info("{} files import failed", filesImportFailed.size());
             filesImportFailed.forEach(f -> LOGGER.info("File '{}' import failed !!", f));
             LOGGER.info("=================================");
-
-        } catch (Exception exc) {
-            LOGGER.error("Job execution error: {}", exc.getMessage());
         }
     }
 }
