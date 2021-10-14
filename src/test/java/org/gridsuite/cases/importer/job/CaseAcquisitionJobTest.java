@@ -141,7 +141,7 @@ public class CaseAcquisitionJobTest {
     }
 
     @Test
-    public void mainTest() throws IOException {
+    public void mainTest() throws InterruptedException, IOException {
 
         SFTP_SERVER_RULE.createDirectory("/cases");
         SFTP_SERVER_RULE.putFile("/cases/case1.iidm", "fake file content 1", UTF_8);
