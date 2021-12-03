@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS import_history.files (
+CREATE TABLE IF NOT EXISTS files (
     filename text,
     origin text,
     import_date timestamp,
