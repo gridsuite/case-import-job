@@ -19,8 +19,6 @@ public class CaseImportLogger implements AutoCloseable {
 
     private final CassandraConnector connector = new CassandraConnector();
 
-    private static final String KEYSPACE_IMPORT_HISTORY = "import_history";
-
     private static final String FILES_TABLE = "files";
 
     private static final String FILENAME_COLUMN = "filename";
@@ -28,11 +26,18 @@ public class CaseImportLogger implements AutoCloseable {
     private static final String IMPORT_DATE_COLUMN = "import_date";
 
     private PreparedStatement psInsertImportedFile;
+    private String keyspaceName;
 
-    public void connectDb(String hostname, int port, String datacenter) {
+    private void setKeyspaceName(String keyspaceName) {
+        this.keyspaceName = keyspaceName;
+    }
+
+    public void connectDb(String hostname, int port, String datacenter, String keyspaceName) {
         connector.connect(hostname, port, datacenter);
 
-        psInsertImportedFile = connector.getSession().prepare(insertInto(KEYSPACE_IMPORT_HISTORY, FILES_TABLE)
+        setKeyspaceName(keyspaceName);
+
+        psInsertImportedFile = connector.getSession().prepare(insertInto(this.keyspaceName, FILES_TABLE)
                 .value(FILENAME_COLUMN, bindMarker())
                 .value(ORIGIN_COLUMN, bindMarker())
                 .value(IMPORT_DATE_COLUMN, bindMarker())
@@ -41,7 +46,7 @@ public class CaseImportLogger implements AutoCloseable {
     }
 
     public boolean isImportedFile(String filename, String origin) {
-        ResultSet resultSet = connector.getSession().execute(selectFrom(KEYSPACE_IMPORT_HISTORY, FILES_TABLE)
+        ResultSet resultSet = connector.getSession().execute(selectFrom(this.keyspaceName, FILES_TABLE)
                 .columns(
                         FILENAME_COLUMN,
                         ORIGIN_COLUMN,
