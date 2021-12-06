@@ -42,7 +42,7 @@ public class CaseAcquisitionJobTest {
 
     @ClassRule
     public static final CassandraRule CASSANDRA_RULE = new CassandraRule().withCassandraFactory(EmbeddedCassandraFactoryConfig.embeddedCassandraFactory())
-                                                                          .withCqlDataSet(CqlDataSet.ofClasspaths("create_keyspace.cql", "import_history.cql"));
+                                                                          .withCqlDataSet(CqlDataSet.ofClasspaths("create_keyspace.cql").add(CqlDataSet.ofStrings("USE import_history;")).add(CqlDataSet.ofClasspaths("import_history.cql")));
 
     @ClassRule
     public static final FakeSftpServerRule SFTP_SERVER_RULE = new FakeSftpServerRule().addUser("dummy", "dummy").setPort(2222);
