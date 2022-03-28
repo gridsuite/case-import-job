@@ -46,7 +46,7 @@
     <properties>
         <java.version>11</java.version>
 
-        <gridsuite-dependencies.version>14</gridsuite-dependencies.version>
+        <gridsuite-dependencies.version>16-SNAPSHOT</gridsuite-dependencies.version>
 
         <jcraft.version>0.1.55</jcraft.version>
         <fake.sftp.server.version>2.0.1</fake.sftp.server.version>
@@ -54,6 +54,8 @@
         <mockserver.version>5.10.0</mockserver.version>
         <apache.commons.vfs2.version>2.6.0</apache.commons.vfs2.version>
         <commons.net.version>3.7</commons.net.version>
+        <jackson-databind.version>2.13.1</jackson-databind.version>
+        <jackson.version>2.13.1</jackson.version>
     </properties>
 
     <build>
@@ -155,6 +157,18 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
 
         <!-- Runtime dependencies -->
