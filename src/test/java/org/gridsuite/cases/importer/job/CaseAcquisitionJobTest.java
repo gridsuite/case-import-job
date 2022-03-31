@@ -6,13 +6,10 @@
  */
 package org.gridsuite.cases.importer.job;
 
-import com.github.nosan.embedded.cassandra.api.cql.CqlDataSet;
-import com.github.nosan.embedded.cassandra.junit4.test.CassandraRule;
 import com.github.stefanbirkner.fakesftpserver.rule.FakeSftpServerRule;
-import org.junit.After;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
+import com.powsybl.commons.config.ModuleConfig;
+import com.powsybl.commons.config.PlatformConfig;
+import org.junit.*;
 import org.mockftpserver.fake.FakeFtpServer;
 import org.mockftpserver.fake.UserAccount;
 import org.mockftpserver.fake.filesystem.DirectoryEntry;
@@ -21,10 +18,9 @@ import org.mockftpserver.fake.filesystem.FileSystem;
 import org.mockftpserver.fake.filesystem.UnixFakeFileSystem;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
 
@@ -38,11 +34,9 @@ import static org.mockserver.model.HttpResponse.response;
  */
 public class CaseAcquisitionJobTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CaseAcquisitionJobTest.class);
-
-    @ClassRule
-    public static final CassandraRule CASSANDRA_RULE = new CassandraRule().withCassandraFactory(EmbeddedCassandraFactoryConfig.embeddedCassandraFactory())
-                                                                          .withCqlDataSet(CqlDataSet.ofClasspaths("create_keyspace.cql").add(CqlDataSet.ofStrings("USE import_history;")).add(CqlDataSet.ofClasspaths("import_history.cql")));
+    private String url;
+    private String username;
+    private String password;
 
     @ClassRule
     public static final FakeSftpServerRule SFTP_SERVER_RULE = new FakeSftpServerRule().addUser("dummy", "dummy").setPort(2222);
@@ -52,18 +46,43 @@ public class CaseAcquisitionJobTest {
 
     @After
     public void tearDown() throws IOException {
-        CqlDataSet.ofClasspaths("truncate.cql").forEachStatement(CASSANDRA_RULE.getCassandraConnection()::execute);
         SFTP_SERVER_RULE.deleteAllFilesAndDirectories();
+    }
+
+    @Before
+    public void init() {
+        PlatformConfig platformConfig = PlatformConfig.defaultConfig();
+        ModuleConfig config = platformConfig.getModuleConfig("database");
+        url = config.getStringProperty("url");
+        username = config.getStringProperty("username");
+        password = config.getStringProperty("password");
     }
 
     @Test
     public void historyLoggerTest() {
         try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-            caseImportLogger.connectDb("localhost", 9142, "datacenter1", "import_history");
+            caseImportLogger.connectDb(url, username, password);
             Date importDate = new Date();
             assertFalse(caseImportLogger.isImportedFile("testFile.iidm", "my_sftp_server"));
             caseImportLogger.logFileAcquired("testFile.iidm", "my_sftp_server", importDate);
             assertTrue(caseImportLogger.isImportedFile("testFile.iidm", "my_sftp_server"));
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testLogFileAcquiredError() {
+        try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
+            caseImportLogger.connectDb(url, username, password);
+            Date importDate = new Date();
+            caseImportLogger.logFileAcquired("test.iidm", null, importDate);
+            caseImportLogger.logFileAcquired(null, "my_sftp_server", importDate);
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testConnectDbException() {
+        try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
+            caseImportLogger.connectDb(null, username, password);
         }
     }
 
@@ -141,14 +160,14 @@ public class CaseAcquisitionJobTest {
     }
 
     @Test
-    public void mainTest() throws InterruptedException, IOException {
+    public void mainTest() throws InterruptedException, IOException, SQLException {
 
         SFTP_SERVER_RULE.createDirectory("/cases");
         SFTP_SERVER_RULE.putFile("/cases/case1.iidm", "fake file content 1", UTF_8);
         SFTP_SERVER_RULE.putFile("/cases/case2.iidm", "fake file content 2", UTF_8);
 
         CaseImportLogger caseImportLogger = new CaseImportLogger();
-        caseImportLogger.connectDb("localhost", 9142, "datacenter1", "import_history");
+        caseImportLogger.connectDb(url, username, password);
 
         String[] args = null;
 
