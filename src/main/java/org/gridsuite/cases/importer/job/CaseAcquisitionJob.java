@@ -32,8 +32,8 @@ public final class CaseAcquisitionJob {
         PlatformConfig platformConfig = PlatformConfig.defaultConfig();
 
         ModuleConfig moduleConfigAcquisitionServer = platformConfig.getModuleConfig("acquisition-server");
-        ModuleConfig moduleConfigCassandra = platformConfig.getModuleConfig("cassandra");
         ModuleConfig moduleConfigCaseServer = platformConfig.getModuleConfig("case-server");
+        ModuleConfig moduleConfigDatabase = platformConfig.getModuleConfig("database");
 
         final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(moduleConfigCaseServer.getStringProperty("url"));
 
@@ -42,9 +42,10 @@ public final class CaseAcquisitionJob {
                                                                          moduleConfigAcquisitionServer.getStringProperty("password"));
              CaseImportLogger caseImportLogger = new CaseImportLogger()) {
             acquisitionServer.open();
-            String caseImportKeyspaceName = moduleConfigCassandra.getStringProperty("keyspace-name", "import_history");
 
-            caseImportLogger.connectDb(moduleConfigCassandra.getStringProperty("contact-points"), moduleConfigCassandra.getIntProperty("port"), moduleConfigCassandra.getStringProperty("datacenter"), caseImportKeyspaceName);
+            caseImportLogger.connectDb(moduleConfigDatabase.getStringProperty("url"),
+                                                moduleConfigDatabase.getStringProperty("username"),
+                                                moduleConfigDatabase.getStringProperty("password"));
 
             String casesDirectory = moduleConfigAcquisitionServer.getStringProperty("cases-directory");
             String serverLabel = moduleConfigAcquisitionServer.getStringProperty("label");

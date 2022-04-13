@@ -5,10 +5,10 @@ acquisition-server:
   cases-directory: ./cases
   label: my_sftp_server
 
-cassandra:
-  contact-points: localhost
-  port: 9142
-  datacenter: datacenter1
-
 case-server:
   url: http://localhost:45385/
+
+database:
+  url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;
+  username: ""
+  password: ""

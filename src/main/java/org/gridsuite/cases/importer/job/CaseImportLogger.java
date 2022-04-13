@@ -6,64 +6,85 @@
  */
 package org.gridsuite.cases.importer.job;
 
-import com.datastax.oss.driver.api.core.cql.PreparedStatement;
-import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.datastax.oss.driver.api.core.cql.Row;
-import java.util.Date;
+import liquibase.Contexts;
+import liquibase.LabelExpression;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.jvm.JdbcConnection;
+import liquibase.exception.DatabaseException;
+import liquibase.resource.ClassLoaderResourceAccessor;
 
-import static com.datastax.oss.driver.api.querybuilder.QueryBuilder.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.Objects;
+import java.util.Properties;
+
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
 public class CaseImportLogger implements AutoCloseable {
 
-    private final CassandraConnector connector = new CassandraConnector();
+    private static final String SELECT_QUERY = "SELECT (filename, origin, import_date) FROM files where filename = ? and origin = ?";
+    private static final String INSERT_QUERY = "INSERT INTO files (filename, origin, import_date) VALUES(?, ?, ?)";
 
-    private static final String FILES_TABLE = "files";
+    public static final String DB_CHANGELOG_MASTER = "db/changelog/db.changelog-master.yaml";
 
-    private static final String FILENAME_COLUMN = "filename";
-    private static final String ORIGIN_COLUMN = "origin";
-    private static final String IMPORT_DATE_COLUMN = "import_date";
+    private JdbcConnector connector;
 
-    private PreparedStatement psInsertImportedFile;
-    private String keyspaceName;
+    public void connectDb(String url, String username, String password) {
+        connector = new JdbcConnector(url, username, password);
+        try {
+            // liquibase creates the connection and closes it
+            // (normal because it could use a separate user, or set special flags on the connection)
+            updateLiquibase(connector);
+        } catch (DatabaseException e) {
+            throw new RuntimeException(e);
+        }
 
-    private void setKeyspaceName(String keyspaceName) {
-        this.keyspaceName = keyspaceName;
+        // Create another connection for regular operations
+        connector.connect();
     }
 
-    public void connectDb(String hostname, int port, String datacenter, String keyspaceName) {
-        connector.connect(hostname, port, datacenter);
-
-        setKeyspaceName(keyspaceName);
-
-        psInsertImportedFile = connector.getSession().prepare(insertInto(this.keyspaceName, FILES_TABLE)
-                .value(FILENAME_COLUMN, bindMarker())
-                .value(ORIGIN_COLUMN, bindMarker())
-                .value(IMPORT_DATE_COLUMN, bindMarker())
-                .build());
-
+    // TODO use separate user/password for liquibase
+    private void updateLiquibase(JdbcConnector connector) throws DatabaseException {
+        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connector.connect()));
+        Properties properties = new Properties();
+        try (Liquibase liquibase = new Liquibase(DB_CHANGELOG_MASTER, new ClassLoaderResourceAccessor(), database);) {
+            properties.forEach((key, value) -> liquibase.setChangeLogParameter(Objects.toString(key), value));
+            liquibase.update(new Contexts(), new LabelExpression());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isImportedFile(String filename, String origin) {
-        ResultSet resultSet = connector.getSession().execute(selectFrom(this.keyspaceName, FILES_TABLE)
-                .columns(
-                        FILENAME_COLUMN,
-                        ORIGIN_COLUMN,
-                        IMPORT_DATE_COLUMN)
-                .whereColumn(FILENAME_COLUMN).isEqualTo(literal(filename))
-                .whereColumn(ORIGIN_COLUMN).isEqualTo(literal(origin))
-                .build());
-        Row one = resultSet.one();
-        return one != null;
+        try (PreparedStatement preparedStatement = connector.getConnection().prepareStatement(SELECT_QUERY)) {
+            preparedStatement.setString(1, filename);
+            preparedStatement.setString(2, origin);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            return resultSet.next();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void logFileAcquired(String fileName, String origin, Date date) {
-        connector.getSession().execute(psInsertImportedFile.bind(fileName, origin, date.toInstant()));
+        try (PreparedStatement preparedStatement = connector.getConnection().prepareStatement(INSERT_QUERY)) {
+            preparedStatement.setString(1, fileName);
+            preparedStatement.setString(2, origin);
+            preparedStatement.setDate(3, new java.sql.Date(date.getTime()));
+            preparedStatement.executeUpdate();
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void close() {
         connector.close();
     }
-
 }

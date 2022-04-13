@@ -5,11 +5,13 @@ acquisition-server:
   cases-directory: ./cases
   label: my_sftp_server
 
-cassandra:
-  contact-points: localhost
-  port: 9042
-  datacenter: datacenter1
-  keyspace-name: import_history
-
 case-server:
   url: http://127.0.0.1/
+
+liquibase:
+  change-log: classpath:db/changelog/db.changelog-master.yaml
+
+database:
+  url: jdbc:postgresql://localhost:5432/import_history
+  username: postgres
+  password: postgres
