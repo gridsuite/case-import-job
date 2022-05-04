@@ -54,6 +54,7 @@
         <mockserver.version>5.10.0</mockserver.version>
         <apache.commons.vfs2.version>2.6.0</apache.commons.vfs2.version>
         <commons.net.version>3.7</commons.net.version>
+        <springboot.version>2.6.6</springboot.version>
     </properties>
 
     <build>
@@ -91,6 +92,13 @@
                 <groupId>org.gridsuite</groupId>
                 <artifactId>gridsuite-dependencies</artifactId>
                 <version>${gridsuite-dependencies.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-batch</artifactId>
+                <version>${springboot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -137,6 +145,11 @@
     <dependencies>
         <!-- Compilation dependencies -->
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-batch</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
         </dependency>
@@ -159,6 +172,10 @@
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>powsybl-ws-commons</artifactId>
         </dependency>
 
         <!-- Runtime dependencies -->
@@ -227,6 +244,21 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.batch</groupId>
+            <artifactId>spring-batch-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

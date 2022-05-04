@@ -6,7 +6,9 @@
  */
 package org.gridsuite.cases.importer.job;
 
-import org.apache.commons.vfs2.*;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.auth.StaticUserAuthenticator;
 import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
@@ -16,10 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -72,6 +71,33 @@ public class AcquisitionServer implements AutoCloseable {
                 childrenUrls.put(childName, childUrl);
             } catch (FileSystemException e) {
                 LOGGER.warn(e.getMessage());
+            }
+        }
+        return childrenUrls;
+    }
+
+    public List<FileUrl> listFileUrls(String acquisitionDirPath, boolean createFolder) throws IOException {
+        FileObject serverRoot = fsManager.resolveFile(serverUrl, fsOptions);
+        FileObject acquisitionDirectory = serverRoot.resolveFile(acquisitionDirPath);
+        List<FileUrl> childrenUrls = new ArrayList<>();
+        FileObject[] children = acquisitionDirectory.getChildren();
+        if (children != null) {
+            List<FileObject> childrenFiles = Arrays.stream(children).filter(f -> {
+                try {
+                    return f.isFile();
+                } catch (FileSystemException e) {
+                    return false;
+                }
+            }).collect(Collectors.toList());
+
+            for (FileObject child : childrenFiles) {
+                try {
+                    String childName = child.getName().getBaseName();
+                    String childUrl = child.getURL().toString();
+                    childrenUrls.add(new FileUrl(childName, childUrl));
+                } catch (FileSystemException e) {
+                    LOGGER.warn(e.getMessage());
+                }
             }
         }
 

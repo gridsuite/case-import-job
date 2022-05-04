@@ -7,9 +7,11 @@
 package org.gridsuite.cases.importer.job;
 
 import com.github.stefanbirkner.fakesftpserver.rule.FakeSftpServerRule;
-import com.powsybl.commons.config.ModuleConfig;
-import com.powsybl.commons.config.PlatformConfig;
-import org.junit.*;
+import org.junit.After;
+import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockftpserver.fake.FakeFtpServer;
 import org.mockftpserver.fake.UserAccount;
 import org.mockftpserver.fake.filesystem.DirectoryEntry;
@@ -18,9 +20,20 @@ import org.mockftpserver.fake.filesystem.FileSystem;
 import org.mockftpserver.fake.filesystem.UnixFakeFileSystem;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.test.JobLauncherTestUtils;
+import org.springframework.batch.test.context.SpringBatchTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.sql.DataSource;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
 
@@ -32,11 +45,12 @@ import static org.mockserver.model.HttpResponse.response;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class CaseAcquisitionJobTest {
 
-    private String url;
-    private String username;
-    private String password;
+@EnableAutoConfiguration
+@RunWith(SpringRunner.class)
+@ContextConfiguration(classes = BatchConfig.class)
+@SpringBatchTest
+public class CaseAcquisitionJobTest {
 
     @ClassRule
     public static final FakeSftpServerRule SFTP_SERVER_RULE = new FakeSftpServerRule().addUser("dummy", "dummy").setPort(2222);
@@ -44,24 +58,29 @@ public class CaseAcquisitionJobTest {
     @Rule
     public final MockServerRule mockServer = new MockServerRule(this, 45385);
 
+    @Autowired
+    private JobLauncherTestUtils jobLauncherTestUtils;
+
+    @Autowired
+    private DataSource dataSource;
+
+    @Autowired
+    private Step step;
+
+    @Autowired
+    private JobLauncher jobLauncher;
+
+    @Autowired
+    public JobBuilderFactory jobBuilderFactory;
+
     @After
     public void tearDown() throws IOException {
         SFTP_SERVER_RULE.deleteAllFilesAndDirectories();
     }
 
-    @Before
-    public void init() {
-        PlatformConfig platformConfig = PlatformConfig.defaultConfig();
-        ModuleConfig config = platformConfig.getModuleConfig("database");
-        url = config.getStringProperty("url");
-        username = config.getStringProperty("username");
-        password = config.getStringProperty("password");
-    }
-
     @Test
     public void historyLoggerTest() {
-        try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-            caseImportLogger.connectDb(url, username, password);
+        try (CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource)) {
             Date importDate = new Date();
             assertFalse(caseImportLogger.isImportedFile("testFile.iidm", "my_sftp_server"));
             caseImportLogger.logFileAcquired("testFile.iidm", "my_sftp_server", importDate);
@@ -71,24 +90,15 @@ public class CaseAcquisitionJobTest {
 
     @Test(expected = RuntimeException.class)
     public void testLogFileAcquiredError() {
-        try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-            caseImportLogger.connectDb(url, username, password);
+        try (CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource)) {
             Date importDate = new Date();
             caseImportLogger.logFileAcquired("test.iidm", null, importDate);
             caseImportLogger.logFileAcquired(null, "my_sftp_server", importDate);
         }
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testConnectDbException() {
-        try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-            caseImportLogger.connectDb(null, username, password);
-        }
-    }
-
     @Test
     public void testSftpAcquisition() throws IOException {
-
         SFTP_SERVER_RULE.createDirectory("/cases");
         SFTP_SERVER_RULE.putFile("/cases/case1.iidm", "fake file content 1", UTF_8);
         SFTP_SERVER_RULE.putFile("/cases/case2.iidm", "fake file content 2", UTF_8);
@@ -112,7 +122,7 @@ public class CaseAcquisitionJobTest {
     }
 
     @Test
-    public void testFtpAcquisition() throws IOException {
+    public void testFtpAcquisition() {
 
         FileSystem fileSystem = new UnixFakeFileSystem();
         fileSystem.add(new DirectoryEntry("/cases"));
@@ -144,7 +154,6 @@ public class CaseAcquisitionJobTest {
         } finally {
             fakeFtpServer.stop();
         }
-
     }
 
     @Test
@@ -160,21 +169,22 @@ public class CaseAcquisitionJobTest {
     }
 
     @Test
-    public void mainTest() throws InterruptedException, IOException, SQLException {
-
+    public void mainTest() throws Exception {
         SFTP_SERVER_RULE.createDirectory("/cases");
         SFTP_SERVER_RULE.putFile("/cases/case1.iidm", "fake file content 1", UTF_8);
         SFTP_SERVER_RULE.putFile("/cases/case2.iidm", "fake file content 2", UTF_8);
 
-        CaseImportLogger caseImportLogger = new CaseImportLogger();
-        caseImportLogger.connectDb(url, username, password);
+        JobParameters param = new JobParametersBuilder().addString("JobID",
+                String.valueOf(System.currentTimeMillis())).toJobParameters();
 
-        String[] args = null;
+        CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource);
+        dataSource.getConnection().close();
 
         // 2 files on SFTP server, 2 cases will be imported
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
-            .respond(response().withStatusCode(200));
-        CaseAcquisitionJob.main(args);
+                .respond(response().withStatusCode(200));
+
+        jobLauncherTestUtils.launchStep(step.getName(), param);
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(2));
         assertTrue(caseImportLogger.isImportedFile("case1.iidm", "my_sftp_server"));
         assertTrue(caseImportLogger.isImportedFile("case2.iidm", "my_sftp_server"));
@@ -183,7 +193,9 @@ public class CaseAcquisitionJobTest {
         mockServer.getClient().clear(request());
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(200));
-        CaseAcquisitionJob.main(args);
+        JobParameters paramNoNewFile = new JobParametersBuilder().addString("JobID",
+                String.valueOf(System.currentTimeMillis())).toJobParameters();
+        jobLauncherTestUtils.launchStep(step.getName(), paramNoNewFile);
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(0));
 
         // One new file on SFTP server, one case import requested
@@ -191,7 +203,10 @@ public class CaseAcquisitionJobTest {
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(200));
         SFTP_SERVER_RULE.putFile("/cases/case3.iidm", "fake file content 3", UTF_8);
-        CaseAcquisitionJob.main(args);
+
+        JobParameters paramNewFile = new JobParametersBuilder().addString("JobID",
+                String.valueOf(System.currentTimeMillis())).toJobParameters();
+        jobLauncherTestUtils.launchStep(step.getName(), paramNewFile);
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(1));
         assertTrue(caseImportLogger.isImportedFile("case3.iidm", "my_sftp_server"));
 
@@ -200,9 +215,10 @@ public class CaseAcquisitionJobTest {
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
                 .respond(response().withStatusCode(500));
         SFTP_SERVER_RULE.putFile("/cases/case4.iidm", "fake file content 4", UTF_8);
-        CaseAcquisitionJob.main(args);
+        JobParameters paramFailedImport = new JobParametersBuilder().addString("JobID",
+                String.valueOf(System.currentTimeMillis())).toJobParameters();
+        jobLauncher.run(jobLauncherTestUtils.getJob(), paramFailedImport);
         mockServer.getClient().verify(request().withMethod("POST").withPath("/v1/cases/public"), VerificationTimes.exactly(1));
         assertFalse(caseImportLogger.isImportedFile("case4.iidm", "my_sftp_server"));
     }
-
 }

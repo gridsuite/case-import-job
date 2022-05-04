@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: case-import-job
+  main:
+    allow-circular-references: true
+
+dbName: import_history

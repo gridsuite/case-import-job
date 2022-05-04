@@ -1,3 +1,9 @@
+spring:
+  batch:
+    initialize-schema: always
+  main:
+    allow-circular-references: true
+
 acquisition-server:
   url: sftp://localhost:22
   username: my_username
@@ -15,3 +21,4 @@ database:
   url: jdbc:postgresql://localhost:5432/import_history
   username: postgres
   password: postgres
+  driverClassName: org.postgresql.Driver
