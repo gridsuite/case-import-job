@@ -10,8 +10,12 @@ import com.powsybl.commons.config.ModuleConfig;
 import com.powsybl.commons.config.PlatformConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import java.io.IOException;
+import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -20,32 +24,34 @@ import java.util.Map;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public final class CaseAcquisitionJob {
+
+@SuppressWarnings({"checkstyle:HideUtilityClassConstructor", "checkstyle:FinalClass"})
+@SpringBootApplication
+public class CaseAcquisitionJob implements CommandLineRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CaseAcquisitionJob.class);
 
-    private CaseAcquisitionJob() {
+    @Autowired
+    private DataSource dataSource;
+
+    public static void main(String... args) {
+        SpringApplication.run(CaseAcquisitionJob.class, args);
     }
 
-    public static void main(String... args) throws InterruptedException, IOException {
-
+    @Override
+    public void run(String... args) throws Exception {
         PlatformConfig platformConfig = PlatformConfig.defaultConfig();
 
         ModuleConfig moduleConfigAcquisitionServer = platformConfig.getModuleConfig("acquisition-server");
         ModuleConfig moduleConfigCaseServer = platformConfig.getModuleConfig("case-server");
-        ModuleConfig moduleConfigDatabase = platformConfig.getModuleConfig("database");
 
         final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(moduleConfigCaseServer.getStringProperty("url"));
 
         try (AcquisitionServer acquisitionServer = new AcquisitionServer(moduleConfigAcquisitionServer.getStringProperty("url"),
                                                                          moduleConfigAcquisitionServer.getStringProperty("username"),
                                                                          moduleConfigAcquisitionServer.getStringProperty("password"));
-             CaseImportLogger caseImportLogger = new CaseImportLogger()) {
+             CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource)) {
             acquisitionServer.open();
-
-            caseImportLogger.connectDb(moduleConfigDatabase.getStringProperty("url"),
-                                                moduleConfigDatabase.getStringProperty("username"),
-                                                moduleConfigDatabase.getStringProperty("password"));
 
             String casesDirectory = moduleConfigAcquisitionServer.getStringProperty("cases-directory");
             String serverLabel = moduleConfigAcquisitionServer.getStringProperty("label");
