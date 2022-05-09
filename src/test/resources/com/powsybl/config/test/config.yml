@@ -7,8 +7,3 @@ acquisition-server:
 
 case-server:
   url: http://localhost:45385/
-
-database:
-  url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;
-  username: ""
-  password: ""

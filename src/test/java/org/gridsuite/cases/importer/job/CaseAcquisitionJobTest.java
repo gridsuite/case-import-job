@@ -7,9 +7,8 @@
 package org.gridsuite.cases.importer.job;
 
 import com.github.stefanbirkner.fakesftpserver.rule.FakeSftpServerRule;
-import com.powsybl.commons.config.ModuleConfig;
-import com.powsybl.commons.config.PlatformConfig;
 import org.junit.*;
+import org.junit.runner.RunWith;
 import org.mockftpserver.fake.FakeFtpServer;
 import org.mockftpserver.fake.UserAccount;
 import org.mockftpserver.fake.filesystem.DirectoryEntry;
@@ -18,9 +17,13 @@ import org.mockftpserver.fake.filesystem.FileSystem;
 import org.mockftpserver.fake.filesystem.UnixFakeFileSystem;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.verify.VerificationTimes;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringRunner;
 
+import javax.sql.DataSource;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
 
@@ -32,11 +35,11 @@ import static org.mockserver.model.HttpResponse.response;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-public class CaseAcquisitionJobTest {
 
-    private String url;
-    private String username;
-    private String password;
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@ContextConfiguration(classes = {CaseAcquisitionJob.class})
+public class CaseAcquisitionJobTest {
 
     @ClassRule
     public static final FakeSftpServerRule SFTP_SERVER_RULE = new FakeSftpServerRule().addUser("dummy", "dummy").setPort(2222);
@@ -44,24 +47,22 @@ public class CaseAcquisitionJobTest {
     @Rule
     public final MockServerRule mockServer = new MockServerRule(this, 45385);
 
+    @Autowired
+    private DataSource dataSource;
+
+    @BeforeClass
+    public static void init() throws IOException {
+        SFTP_SERVER_RULE.createDirectory("/cases");
+    }
+
     @After
     public void tearDown() throws IOException {
         SFTP_SERVER_RULE.deleteAllFilesAndDirectories();
     }
 
-    @Before
-    public void init() {
-        PlatformConfig platformConfig = PlatformConfig.defaultConfig();
-        ModuleConfig config = platformConfig.getModuleConfig("database");
-        url = config.getStringProperty("url");
-        username = config.getStringProperty("username");
-        password = config.getStringProperty("password");
-    }
-
     @Test
     public void historyLoggerTest() {
-        try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-            caseImportLogger.connectDb(url, username, password);
+        try (CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource)) {
             Date importDate = new Date();
             assertFalse(caseImportLogger.isImportedFile("testFile.iidm", "my_sftp_server"));
             caseImportLogger.logFileAcquired("testFile.iidm", "my_sftp_server", importDate);
@@ -71,18 +72,10 @@ public class CaseAcquisitionJobTest {
 
     @Test(expected = RuntimeException.class)
     public void testLogFileAcquiredError() {
-        try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-            caseImportLogger.connectDb(url, username, password);
+        try (CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource)) {
             Date importDate = new Date();
             caseImportLogger.logFileAcquired("test.iidm", null, importDate);
             caseImportLogger.logFileAcquired(null, "my_sftp_server", importDate);
-        }
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testConnectDbException() {
-        try (CaseImportLogger caseImportLogger = new CaseImportLogger()) {
-            caseImportLogger.connectDb(null, username, password);
         }
     }
 
@@ -112,7 +105,7 @@ public class CaseAcquisitionJobTest {
     }
 
     @Test
-    public void testFtpAcquisition() throws IOException {
+    public void testFtpAcquisition() {
 
         FileSystem fileSystem = new UnixFakeFileSystem();
         fileSystem.add(new DirectoryEntry("/cases"));
@@ -160,16 +153,15 @@ public class CaseAcquisitionJobTest {
     }
 
     @Test
-    public void mainTest() throws InterruptedException, IOException, SQLException {
+    public void mainTest() throws IOException {
 
         SFTP_SERVER_RULE.createDirectory("/cases");
         SFTP_SERVER_RULE.putFile("/cases/case1.iidm", "fake file content 1", UTF_8);
         SFTP_SERVER_RULE.putFile("/cases/case2.iidm", "fake file content 2", UTF_8);
 
-        CaseImportLogger caseImportLogger = new CaseImportLogger();
-        caseImportLogger.connectDb(url, username, password);
+        CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource);
 
-        String[] args = null;
+        String[] args = {};
 
         // 2 files on SFTP server, 2 cases will be imported
         mockServer.getClient().when(request().withMethod("POST").withPath("/v1/cases/public"))
@@ -205,4 +197,14 @@ public class CaseAcquisitionJobTest {
         assertFalse(caseImportLogger.isImportedFile("case4.iidm", "my_sftp_server"));
     }
 
+    @Test(expected = RuntimeException.class)
+    public void testIslogFileAcquiredException() {
+        CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource);
+        caseImportLogger.logFileAcquired(null, null, null);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testDatasourceNullException() {
+        new CaseImportLogger(null);
+    }
 }
