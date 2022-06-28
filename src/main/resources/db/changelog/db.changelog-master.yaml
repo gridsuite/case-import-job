@@ -1,5 +1,5 @@
 databaseChangeLog:
 
   - include:
-      file: changesets/changelog_2022-04-04T12:55:09Z.xml
+      file: changesets/changelog_v1.xml
       relativeToChangelogFile: true
