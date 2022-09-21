@@ -1,1 +1,3 @@
-dbName: import_history
+powsybl-ws:
+  database:
+    name: import_history
