@@ -47,7 +47,7 @@ public class CaseImportServiceRequester {
         String boundary = new BigInteger(256, new Random()).toString();
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(serviceUrl + API_VERSION + "/cases/public"))
+                .uri(URI.create(serviceUrl + API_VERSION + "/cases?withExpiration=true"))
                 .timeout(Duration.ofMinutes(2))
                 .header("Content-Type", "multipart/form-data;boundary=" + boundary)
                 .POST(ofMimeMultipartData(data, boundary))
