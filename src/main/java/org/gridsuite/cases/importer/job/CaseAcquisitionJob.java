@@ -6,6 +6,7 @@
  */
 package org.gridsuite.cases.importer.job;
 
+import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.config.ModuleConfig;
 import com.powsybl.commons.config.PlatformConfig;
 import org.slf4j.Logger;
@@ -42,8 +43,8 @@ public class CaseAcquisitionJob implements CommandLineRunner {
     public void run(String... args) throws Exception {
         PlatformConfig platformConfig = PlatformConfig.defaultConfig();
 
-        ModuleConfig moduleConfigAcquisitionServer = platformConfig.getModuleConfig("acquisition-server");
-        ModuleConfig moduleConfigCaseServer = platformConfig.getModuleConfig("case-server");
+        ModuleConfig moduleConfigAcquisitionServer = platformConfig.getOptionalModuleConfig("acquisition-server").orElseThrow(() -> new PowsyblException("Module acquisition-server not found !!"));
+        ModuleConfig moduleConfigCaseServer = platformConfig.getOptionalModuleConfig("case-server").orElseThrow(() -> new PowsyblException("Module case-server not found !!"));
 
         final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(moduleConfigCaseServer.getStringProperty("url"));
 
