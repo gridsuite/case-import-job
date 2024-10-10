@@ -9,9 +9,9 @@ package org.gridsuite.cases.importer.job;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.config.ModuleConfig;
 import com.powsybl.commons.config.PlatformConfig;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,38 +25,41 @@ import java.util.Map;
 /**
  * @author Nicolas Noir <nicolas.noir at rte-france.com>
  */
-
-@SuppressWarnings({"checkstyle:HideUtilityClassConstructor", "checkstyle:FinalClass"})
 @SpringBootApplication
+@AllArgsConstructor
 public class CaseAcquisitionJob implements CommandLineRunner {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(CaseAcquisitionJob.class);
 
-    @Autowired
-    private DataSource dataSource;
+    private final DataSource dataSource;
 
     public static void main(String... args) {
         SpringApplication.run(CaseAcquisitionJob.class, args);
     }
 
     @Override
-    public void run(String... args) throws Exception {
-        PlatformConfig platformConfig = PlatformConfig.defaultConfig();
+    public void run(final String... args) throws Exception {
+        final PlatformConfig platformConfig = PlatformConfig.defaultConfig();
+        final ModuleConfig moduleConfigAcquisitionServer = platformConfig.getOptionalModuleConfig("acquisition-server").orElseThrow(() -> new PowsyblException("Module acquisition-server not found !!"));
+        final ModuleConfig moduleConfigCaseServer = platformConfig.getOptionalModuleConfig("case-server").orElseThrow(() -> new PowsyblException("Module case-server not found !!"));
+        run(
+            moduleConfigCaseServer.getStringProperty("url"),
+            moduleConfigAcquisitionServer.getStringProperty("username"),
+            moduleConfigAcquisitionServer.getStringProperty("password"),
+            moduleConfigAcquisitionServer.getStringProperty("url"),
+            moduleConfigAcquisitionServer.getStringProperty("cases-directory"),
+            moduleConfigAcquisitionServer.getStringProperty("label")
+        );
+    }
 
-        ModuleConfig moduleConfigAcquisitionServer = platformConfig.getOptionalModuleConfig("acquisition-server").orElseThrow(() -> new PowsyblException("Module acquisition-server not found !!"));
-        ModuleConfig moduleConfigCaseServer = platformConfig.getOptionalModuleConfig("case-server").orElseThrow(() -> new PowsyblException("Module case-server not found !!"));
+    public void run(String caseServerUrl, String acquisitionServerUrl, String acquisitionServerUsername, String acquisitionServerPassword,
+                    String acquisitionServerCasesDirectory, String serverLabel) throws Exception {
+        final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(caseServerUrl);
 
-        final CaseImportServiceRequester caseImportServiceRequester = new CaseImportServiceRequester(moduleConfigCaseServer.getStringProperty("url"));
-
-        try (AcquisitionServer acquisitionServer = new AcquisitionServer(moduleConfigAcquisitionServer.getStringProperty("url"),
-                                                                         moduleConfigAcquisitionServer.getStringProperty("username"),
-                                                                         moduleConfigAcquisitionServer.getStringProperty("password"));
+        try (AcquisitionServer acquisitionServer = new AcquisitionServer(acquisitionServerUrl, acquisitionServerUsername, acquisitionServerPassword);
              CaseImportLogger caseImportLogger = new CaseImportLogger(dataSource)) {
             acquisitionServer.open();
 
-            String casesDirectory = moduleConfigAcquisitionServer.getStringProperty("cases-directory");
-            String serverLabel = moduleConfigAcquisitionServer.getStringProperty("label");
-            Map<String, String> filesToAcquire = acquisitionServer.listFiles(casesDirectory);
+            Map<String, String> filesToAcquire = acquisitionServer.listFiles(acquisitionServerCasesDirectory);
             LOGGER.info("{} files found on server", filesToAcquire.size());
 
             List<String> filesImported = new ArrayList<>();

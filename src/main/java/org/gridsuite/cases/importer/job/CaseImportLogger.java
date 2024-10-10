@@ -25,7 +25,7 @@ public class CaseImportLogger implements AutoCloseable {
     private static final String SELECT_QUERY = "SELECT (filename, origin, import_date) FROM files where filename = ? and origin = ?";
     private static final String INSERT_QUERY = "INSERT INTO files (filename, origin, import_date) VALUES(?, ?, ?)";
 
-    private Connection connection;
+    private final Connection connection;
 
     public CaseImportLogger(DataSource dataSource) {
         try {
@@ -59,6 +59,7 @@ public class CaseImportLogger implements AutoCloseable {
         }
     }
 
+    @Override
     public void close() {
         try {
             connection.close();
