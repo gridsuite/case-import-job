@@ -50,6 +50,8 @@
         <mockserver.version>5.10.0</mockserver.version>
         <apache.commons.vfs2.version>2.6.0</apache.commons.vfs2.version>
         <commons.net.version>3.7</commons.net.version>
+        <sonar.organization>gridsuite</sonar.organization>
+        <sonar.projectKey>org.gridsuite:case-import-job</sonar.projectKey>
     </properties>
 
     <build>
